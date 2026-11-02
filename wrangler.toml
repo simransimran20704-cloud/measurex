@@ -6,15 +6,15 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENVIRONMENT = "production"
 
-# Cloudflare D1 Database Binding
+# Cloudflare D1 Database Binding (Active & 100% Free - No Payment Required)
 [[d1_databases]]
 binding = "DB"
 database_name = "measurex-db"
 database_id = "f0432b03-03aa-4e73-9015-af46b32e54a2"
 
-# Cloudflare R2 Private Storage Bucket Binding
-# Ensure this bucket is created via:
-#   npx wrangler r2 bucket create measurex-documents
-[[r2_buckets]]
-binding = "DOCUMENTS_VAULT"
-bucket_name = "measurex-documents"
+# Cloudflare R2 Private Storage Bucket Binding (Disabled - Prevents Payment Gate Block)
+# All project drawings, measurements, and user data are stored directly in D1 Database.
+# To enable R2 in the future after adding billing, uncomment below:
+# [[r2_buckets]]
+# binding = "DOCUMENTS_VAULT"
+# bucket_name = "measurex-documents"
