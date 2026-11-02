@@ -7,12 +7,10 @@ compatibility_flags = ["nodejs_compat"]
 ENVIRONMENT = "production"
 
 # Cloudflare D1 Database Binding
-# Replace database_id with your real D1 GUID generated from:
-#   npx wrangler d1 create measurex-db
 [[d1_databases]]
 binding = "DB"
 database_name = "measurex-db"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "f0432b03-03aa-4e73-9015-af46b32e54a2"
 
 # Cloudflare R2 Private Storage Bucket Binding
 # Ensure this bucket is created via:

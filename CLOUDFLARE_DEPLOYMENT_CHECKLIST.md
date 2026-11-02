@@ -82,19 +82,14 @@ A comprehensive final deployment readiness audit was performed across the Cloudf
 
 Follow these exact steps when you are ready to deploy MeasureX to production:
 
-### Step 1: Create Cloudflare D1 Database
-Execute in your terminal:
-```bash
-# 1. Create production D1 database
-npx wrangler d1 create measurex-db
-
-# Example Output:
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "measurex-db"
-# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+### Step 1: Cloudflare D1 Database (Configured)
+The production D1 database has been provisioned:
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "measurex-db"
+database_id = "f0432b03-03aa-4e73-9015-af46b32e54a2"
 ```
-Copy the generated `database_id` and paste it into `wrangler.toml` under `[[d1_databases]]`.
 
 ### Step 2: Apply Database Migrations
 Execute in your terminal:
