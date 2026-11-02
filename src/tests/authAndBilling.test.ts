@@ -57,6 +57,35 @@ describe('MeasureX Authentication & Password System', () => {
     expect(useAuthStore.getState().user?.name).toBe('Dr. Aryan Roy');
   });
 
+  it('strictly rejects duplicate registration for already registered email with warning', () => {
+    const auth = useAuthStore.getState();
+
+    // Already registered seed user
+    expect(auth.isEmailRegistered('simran.sharma@measurex.io')).toBe(true);
+
+    const duplicateAttempt = auth.signup(
+      'Simran Fake Impersonator',
+      'simran.sharma@measurex.io',
+      'SomePassword123'
+    );
+    expect(duplicateAttempt.success).toBe(false);
+    expect(duplicateAttempt.error).toContain('already registered');
+    expect(duplicateAttempt.error).toContain('You cannot register this email again');
+
+    // Case-insensitivity check
+    expect(auth.isEmailRegistered('SIMRAN.SHARMA@MEASUREX.IO')).toBe(true);
+    const caseAttempt = auth.signup(
+      'Simran Uppercase',
+      'SIMRAN.SHARMA@MEASUREX.IO',
+      'SomePassword123'
+    );
+    expect(caseAttempt.success).toBe(false);
+    expect(caseAttempt.error).toContain('already registered');
+
+    // Unregistered email returns false
+    expect(auth.isEmailRegistered('brandnew.engineer@measurex.io')).toBe(false);
+  });
+
   it('handles upgrade to Enterprise plan with invoice generation', () => {
     const auth = useAuthStore.getState();
     auth.login('simran.sharma@measurex.io', 'MeasureX@2026');

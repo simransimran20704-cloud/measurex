@@ -53,6 +53,7 @@ interface AuthState {
   openBillingModal: (plan: SubscriptionPlan) => void;
   closeBillingModal: () => void;
   
+  isEmailRegistered: (email: string) => boolean;
   login: (email: string, pass: string) => { success: boolean; error?: string };
   loginAsDemo: (plan?: SubscriptionPlan) => void;
   signup: (name: string, email: string, pass: string) => { success: boolean; error?: string };
@@ -253,6 +254,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
       });
     },
 
+    isEmailRegistered: (email: string) => {
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail || !cleanEmail.includes('@')) return false;
+      const users = getUsersDb();
+      return users.some((u) => u.email.toLowerCase() === cleanEmail);
+    },
+
     // Sign Up with Password validation and persistence
     signup: (name: string, email: string, pass: string) => {
       const cleanEmail = email.trim().toLowerCase();
@@ -271,10 +279,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
       }
 
       const users = getUsersDb();
-      if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
+      const alreadyExists = users.some((u) => u.email.toLowerCase() === cleanEmail);
+      if (alreadyExists) {
         return {
           success: false,
-          error: `An account with "${email}" already exists. Please sign in instead.`,
+          error: `⚠️ Warning: "${cleanEmail}" is already registered! You cannot register this email again. Please sign in with your password.`,
         };
       }
 
