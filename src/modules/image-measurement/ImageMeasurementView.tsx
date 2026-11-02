@@ -49,21 +49,58 @@ export const ImageMeasurementView: React.FC = () => {
   const [activeDrawing, setActiveDrawing] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setImageSrc(event.target.result as string);
-          setLines([]);
-          setScalePixelsPerMm(null);
-          setToolMode('calibrate');
-          showToast('Image loaded. Draw a reference line across a known scale to calibrate.', 'info');
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // 1. File Type Whitelist Check
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      showToast('Security Alert: Only PNG, JPEG, WebP, and clean SVG blueprints are permitted.', 'warning');
+      e.target.value = '';
+      return;
     }
+
+    // 2. File Size Cap (10MB)
+    if (file.size > MAX_FILE_SIZE) {
+      showToast('File too large: Maximum blueprint upload size is 10 MB.', 'warning');
+      e.target.value = '';
+      return;
+    }
+
+    // 3. For SVG files, inspect text for script injection before loading
+    if (file.type === 'image/svg+xml') {
+      const textReader = new FileReader();
+      textReader.onload = (txtEvt) => {
+        const svgContent = String(txtEvt.target?.result || '');
+        if (/<script|javascript:|onload=|onerror=/i.test(svgContent)) {
+          showToast('Security Alert: Malicious script tags detected in SVG file. Upload rejected.', 'warning');
+          return;
+        }
+
+        setImageSrc(svgContent.startsWith('data:') ? svgContent : `data:image/svg+xml;utf8,${encodeURIComponent(svgContent)}`);
+        setLines([]);
+        setScalePixelsPerMm(null);
+        setToolMode('calibrate');
+        showToast('Blueprint loaded safely. Calibrate scale to begin.', 'info');
+      };
+      textReader.readAsText(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setImageSrc(event.target.result as string);
+        setLines([]);
+        setScalePixelsPerMm(null);
+        setToolMode('calibrate');
+        showToast('Image loaded. Draw a reference line across a known scale to calibrate.', 'info');
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -154,7 +191,12 @@ export const ImageMeasurementView: React.FC = () => {
         <label className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white font-bold text-xs shadow-md shadow-brand-blue/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer">
           <Upload className="w-4 h-4" />
           <span>Upload Blueprint / Photo</span>
-          <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
         </label>
       </div>
 

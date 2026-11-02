@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import confetti from 'canvas-confetti';
+import { apiClient } from '../services/apiClient';
 
 export type SubscriptionPlan = 'free' | 'pro' | 'enterprise';
 
@@ -215,6 +216,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
         localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(profile));
       } catch (e) {}
 
+      // Sync with server-side Cloudflare Worker if online
+      if (typeof window !== 'undefined') {
+        apiClient.auth.login(matched.email, matched.password).catch(() => {});
+      }
+
       set({
         user: profile,
         isAuthenticated: true,
@@ -245,6 +251,11 @@ export const useAuthStore = create<AuthState>((set, get) => {
       try {
         localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(profile));
       } catch (e) {}
+
+      // Sync with server-side Cloudflare Worker if online
+      if (typeof window !== 'undefined') {
+        apiClient.auth.login(matched.email, matched.password).catch(() => {});
+      }
 
       set({
         user: profile,
@@ -303,11 +314,19 @@ export const useAuthStore = create<AuthState>((set, get) => {
         localStorage.setItem(STORAGE_USERS_DB_KEY, JSON.stringify(updatedUsers));
       } catch (e) {}
 
+      // Sync with Cloudflare edge backend if online
+      if (typeof window !== 'undefined') {
+        apiClient.auth.register(cleanName, cleanEmail, pass).catch(() => {});
+      }
+
       // NOTE: Do NOT sign in automatically upon creation. User must explicitly sign in with their password.
       return { success: true };
     },
 
     logout: () => {
+      if (typeof window !== 'undefined') {
+        apiClient.auth.logout().catch(() => {});
+      }
       try {
         localStorage.removeItem(STORAGE_SESSION_KEY);
       } catch (e) {}

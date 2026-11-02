@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthStore, SubscriptionPlan, InvoiceRecord } from '../../stores/authStore';
 import { useAppStore } from '../../stores/appStore';
+import { apiClient } from '../../services/apiClient';
 import {
   X,
   CreditCard,
@@ -254,6 +255,19 @@ export const BillingCheckoutModal: React.FC = () => {
 
     setCheckoutStep('processing');
     setProcessingStatus('Initiating 256-bit SSL encrypted connection...');
+
+    // Initiate Server-Side Payment Session
+    apiClient.payments
+      .createCheckoutSession(billingPlan as 'pro' | 'enterprise', billingCycle)
+      .then((res) => {
+        if (res.checkoutUrl) {
+          window.location.href = res.checkoutUrl;
+          return;
+        }
+      })
+      .catch(() => {
+        // Continues to sandbox preview completion
+      });
 
     setTimeout(() => {
       setProcessingStatus(

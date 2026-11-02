@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ProjectItem } from '../types';
+import { apiClient } from '../services/apiClient';
 
 interface ProjectState {
   projects: ProjectItem[];
@@ -58,6 +59,9 @@ export const useProjectStore = create<ProjectState>((set) => ({
       description: 'Newly created measurement project',
       pointsCount: 0,
     };
+    if (typeof window !== 'undefined') {
+      apiClient.projects.create(title, type, 'Newly created measurement project').catch(() => {});
+    }
     set((state) => {
       const updated = [newProject, ...state.projects];
       try {
@@ -68,6 +72,9 @@ export const useProjectStore = create<ProjectState>((set) => ({
     return id;
   },
   updateProject: (id, updates) => {
+    if (typeof window !== 'undefined') {
+      apiClient.projects.update(id, updates).catch(() => {});
+    }
     set((state) => {
       const updated = state.projects.map((p) =>
         p.id === id ? { ...p, ...updates, lastModified: Date.now() } : p
@@ -79,6 +86,9 @@ export const useProjectStore = create<ProjectState>((set) => ({
     });
   },
   deleteProject: (id) => {
+    if (typeof window !== 'undefined') {
+      apiClient.projects.delete(id).catch(() => {});
+    }
     set((state) => {
       const updated = state.projects.filter((p) => p.id !== id);
       try {
