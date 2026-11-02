@@ -12,6 +12,7 @@ export type NavTab =
   | 'projects'
   | 'history'
   | 'export'
+  | 'image-measurement'
   | 'help';
 
 interface AppState {

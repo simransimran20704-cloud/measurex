@@ -93,5 +93,7 @@ export function convertValue(
   if (!fromUnit || !toUnit) return value;
 
   const baseValue = fromUnit.toBase(value);
-  return toUnit.fromBase(baseValue);
+  const rawResult = toUnit.fromBase(baseValue);
+  // Normalize IEEE-754 floating point artifacts
+  return parseFloat(rawResult.toPrecision(12));
 }

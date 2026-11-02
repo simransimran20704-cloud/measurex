@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { computeScrewGaugeReading } from '../../engine/instruments/screwGaugeMath';
 import { useHistoryStore } from '../../stores/historyStore';
 import { useAppStore } from '../../stores/appStore';
+import { soundEffects } from '../../utils/soundEffects';
 import {
   RotateCcw,
   Copy,
@@ -12,7 +13,16 @@ import {
   Volume2,
   Lock,
   Unlock,
+  Package,
 } from 'lucide-react';
+
+const SPECIMENS = [
+  { id: 'none', name: 'No Specimen (Manual Adjustment)', thicknessMm: 0 },
+  { id: 'bearing', name: 'Steel Ball Bearing (12.700 mm)', thicknessMm: 12.70 },
+  { id: 'wire', name: 'Standard Copper Wire (0.850 mm)', thicknessMm: 0.85 },
+  { id: 'slide', name: 'Microscope Slide (1.150 mm)', thicknessMm: 1.15 },
+  { id: 'shim', name: 'Precision Feeler Shim (0.280 mm)', thicknessMm: 0.28 },
+];
 
 export const ScrewGaugeView: React.FC = () => {
   const { addItem } = useHistoryStore();
@@ -24,6 +34,7 @@ export const ScrewGaugeView: React.FC = () => {
   const [zeroErrorMm, setZeroErrorMm] = useState(0.0);
   const [isLocked, setIsLocked] = useState(false);
   const [mode, setMode] = useState<'interactive' | 'digital' | 'quiz'>('interactive');
+  const [selectedSpecimen, setSelectedSpecimen] = useState<string>('none');
 
   const [userQuizAnswer, setUserQuizAnswer] = useState('');
   const [quizScore, setQuizScore] = useState<{ total: number; correct: number }>({ total: 0, correct: 0 });
@@ -32,6 +43,7 @@ export const ScrewGaugeView: React.FC = () => {
   const isDraggingRef = useRef(false);
   const dragStartYRef = useRef(0);
   const startSpindleMmRef = useRef(0);
+  const lastSoundTickRef = useRef(0);
 
   // Math engine
   const calc = computeScrewGaugeReading(spindlePositionMm, pitchMm, circularDivisions, zeroErrorMm);
@@ -45,6 +57,7 @@ export const ScrewGaugeView: React.FC = () => {
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isLocked) {
       showToast('Micrometer spindle is locked. Unlock to adjust.', 'warning');
+      soundEffects.playLockSnap(true);
       return;
     }
     isDraggingRef.current = true;
@@ -60,6 +73,12 @@ export const ScrewGaugeView: React.FC = () => {
     const deltaMm = (deltaY / 40) * pitchMm;
     const newMm = Math.max(0, Math.min(25, startSpindleMmRef.current + deltaMm));
     setSpindlePositionMm(Number(newMm.toFixed(3)));
+
+    const now = Date.now();
+    if (now - lastSoundTickRef.current > 80) {
+      soundEffects.playSliderTick();
+      lastSoundTickRef.current = now;
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -73,10 +92,28 @@ export const ScrewGaugeView: React.FC = () => {
 
   const handleRatchetClick = () => {
     if (isLocked) return;
+    soundEffects.playRatchetClick();
     // Advance by exactly 1 least count (0.01 mm) with simulated ratchet click
     const next = Math.min(25, spindlePositionMm + calc.leastCount);
     setSpindlePositionMm(Number(next.toFixed(3)));
     showToast('Ratchet click: +0.01 mm advanced', 'info');
+  };
+
+  const handleToggleLock = () => {
+    const next = !isLocked;
+    setIsLocked(next);
+    soundEffects.playLockSnap(next);
+    showToast(next ? 'Spindle locked' : 'Spindle unlocked', 'info');
+  };
+
+  const handleSelectSpecimen = (id: string) => {
+    setSelectedSpecimen(id);
+    const spec = SPECIMENS.find((s) => s.id === id);
+    if (spec && spec.thicknessMm > 0) {
+      setSpindlePositionMm(spec.thicknessMm);
+      soundEffects.playRatchetClick();
+      showToast(`Inserted ${spec.name}: Clamped at ${spec.thicknessMm.toFixed(3)} mm`, 'success');
+    }
   };
 
   const handleCopy = () => {
@@ -135,7 +172,7 @@ export const ScrewGaugeView: React.FC = () => {
         {/* Mode Selector & Lock */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsLocked(!isLocked)}
+            onClick={handleToggleLock}
             className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition-all ${
               isLocked ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-slate-100 text-slate-600 border-transparent'
             }`}
@@ -187,6 +224,29 @@ export const ScrewGaugeView: React.FC = () => {
         </div>
       </div>
 
+      {/* Specimen Test Bench Bar */}
+      <div className="p-4 rounded-2xl bg-white/80 border border-[#DCE5F2] shadow-sm flex flex-wrap items-center justify-between gap-3 backdrop-blur-xl">
+        <div className="flex items-center gap-2">
+          <Package className="w-4 h-4 text-[#8064E8]" />
+          <span className="text-xs font-bold text-[#1D2940]">Test Specimen Bench:</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {SPECIMENS.map((spec) => (
+            <button
+              key={spec.id}
+              onClick={() => handleSelectSpecimen(spec.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                selectedSpecimen === spec.id
+                  ? 'bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {spec.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Main Interactive Micrometer SVG Stage */}
       <div className="relative w-full overflow-x-auto p-8 rounded-3xl bg-gradient-to-b from-white/95 to-[#F1F5FB] border border-white shadow-xl flex flex-col items-center justify-center min-h-[420px]">
         {/* SVG Drawing */}
@@ -230,6 +290,67 @@ export const ScrewGaugeView: React.FC = () => {
             {/* Anvil (Left) */}
             <rect x="110" y="136" width="30" height="28" rx="2" fill="url(#sleeveSteel)" stroke="#475569" strokeWidth="1" />
             <rect x="140" y="142" width="10" height="16" fill="#94A3B8" />
+
+            {/* Test Specimen clamped in gap */}
+            {selectedSpecimen === 'bearing' && spindleWidthPx > 4 && (
+              <g>
+                <circle
+                  cx={150 + spindleWidthPx / 2}
+                  cy="150"
+                  r={Math.min(35, spindleWidthPx / 2)}
+                  fill="url(#sleeveSteel)"
+                  stroke="#334155"
+                  strokeWidth="1.2"
+                />
+                <circle
+                  cx={150 + spindleWidthPx / 2 - 4}
+                  cy="146"
+                  r={Math.min(30, spindleWidthPx / 2) * 0.4}
+                  fill="white"
+                  opacity="0.6"
+                />
+              </g>
+            )}
+
+            {selectedSpecimen === 'wire' && spindleWidthPx > 0 && (
+              <rect
+                x="150"
+                y="145"
+                width={spindleWidthPx}
+                height="10"
+                rx="1"
+                fill="#D97706"
+                stroke="#92400E"
+                strokeWidth="1"
+              />
+            )}
+
+            {selectedSpecimen === 'slide' && spindleWidthPx > 0 && (
+              <rect
+                x="150"
+                y="130"
+                width={spindleWidthPx}
+                height="40"
+                rx="1"
+                fill="#E0F2FE"
+                stroke="#38BDF8"
+                strokeWidth="1.2"
+                fillOpacity="0.8"
+              />
+            )}
+
+            {selectedSpecimen === 'shim' && spindleWidthPx > 0 && (
+              <rect
+                x="150"
+                y="135"
+                width={spindleWidthPx}
+                height="30"
+                rx="0.5"
+                fill="#94A3B8"
+                stroke="#475569"
+                strokeWidth="0.8"
+              />
+            )}
 
             {/* Spindle (Advances from right to anvil) */}
             {/* Maximum stroke = 25 mm. The gap is (25 - spindlePositionMm) * pxPerMm */}

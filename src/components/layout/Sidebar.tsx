@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Crown,
   Sparkles,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -25,6 +26,7 @@ export const Sidebar: React.FC = () => {
     { id: 'home' as NavTab, label: 'Home', icon: Home },
     { id: 'quick-measure' as NavTab, label: 'Quick Measure', icon: Ruler },
     { id: 'precision-studio' as NavTab, label: 'Precision Studio', icon: Crosshair },
+    { id: 'image-measurement' as NavTab, label: 'Image Measure', icon: ImageIcon },
     {
       id: 'scientific-instruments' as NavTab,
       label: 'Instruments Lab',

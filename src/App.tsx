@@ -18,6 +18,7 @@ import { CalibrationView } from './modules/calibration/CalibrationView';
 import { ProjectsView } from './modules/projects/ProjectsView';
 import { HistoryView } from './modules/history/HistoryView';
 import { ExportCenterView } from './modules/export/ExportCenterView';
+import { ImageMeasurementView } from './modules/image-measurement/ImageMeasurementView';
 import { HelpGuideView } from './modules/help/HelpGuideView';
 
 export const App: React.FC = () => {
@@ -47,6 +48,8 @@ export const App: React.FC = () => {
         return <HistoryView />;
       case 'export':
         return <ExportCenterView />;
+      case 'image-measurement':
+        return <ImageMeasurementView />;
       case 'help':
         return <HelpGuideView />;
       default:

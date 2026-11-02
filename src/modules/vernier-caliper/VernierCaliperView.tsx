@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { computeVernierReading } from '../../engine/instruments/vernierMath';
 import { useHistoryStore } from '../../stores/historyStore';
 import { useAppStore } from '../../stores/appStore';
+import { soundEffects } from '../../utils/soundEffects';
 import {
   HelpCircle,
   RotateCcw,
@@ -12,7 +13,15 @@ import {
   Tv,
   BookOpen,
   Award,
+  Package,
 } from 'lucide-react';
+
+const CALIPER_SPECIMENS = [
+  { id: 'none', name: 'Manual Free Drag', thicknessMm: 0 },
+  { id: 'block', name: 'Precision Gauge Block (18.50 mm)', thicknessMm: 18.50 },
+  { id: 'cylinder', name: 'Shaft Cylinder (25.40 mm)', thicknessMm: 25.40 },
+  { id: 'washer', name: 'Thick Steel Washer (34.20 mm)', thicknessMm: 34.20 },
+];
 
 export const VernierCaliperView: React.FC = () => {
   const { addItem } = useHistoryStore();
@@ -22,6 +31,7 @@ export const VernierCaliperView: React.FC = () => {
   const [numDivisions, setNumDivisions] = useState(10); // 10 divisions (LC = 0.1mm) or 50 (LC = 0.02mm)
   const [zeroErrorMm, setZeroErrorMm] = useState(0.0);
   const [mode, setMode] = useState<'interactive' | 'digital' | 'quiz'>('interactive');
+  const [selectedSpecimen, setSelectedSpecimen] = useState<string>('none');
   const [userQuizAnswer, setUserQuizAnswer] = useState('');
   const [quizScore, setQuizScore] = useState<{ total: number; correct: number }>({ total: 0, correct: 0 });
   const [quizFeedback, setQuizFeedback] = useState<string | null>(null);
@@ -29,6 +39,7 @@ export const VernierCaliperView: React.FC = () => {
   const isDraggingRef = useRef(false);
   const dragStartXRef = useRef(0);
   const startJawMmRef = useRef(0);
+  const lastTickTimeRef = useRef(0);
 
   // Calculation from physics engine
   const calc = computeVernierReading(jawPositionMm, 1.0, numDivisions, zeroErrorMm);
@@ -51,6 +62,12 @@ export const VernierCaliperView: React.FC = () => {
     const deltaMm = deltaPx / pxPerMm;
     const newMm = Math.max(0, Math.min(150, startJawMmRef.current + deltaMm));
     setJawPositionMm(Number(newMm.toFixed(2)));
+
+    const now = Date.now();
+    if (now - lastTickTimeRef.current > 70) {
+      soundEffects.playSliderTick();
+      lastTickTimeRef.current = now;
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -59,6 +76,16 @@ export const VernierCaliperView: React.FC = () => {
       try {
         (e.target as Element).releasePointerCapture(e.pointerId);
       } catch (err) {}
+    }
+  };
+
+  const handleSelectSpecimen = (id: string) => {
+    setSelectedSpecimen(id);
+    const spec = CALIPER_SPECIMENS.find((s) => s.id === id);
+    if (spec && spec.thicknessMm > 0) {
+      setJawPositionMm(spec.thicknessMm);
+      soundEffects.playSliderTick();
+      showToast(`Specimen clamped: ${spec.name} (${spec.thicknessMm.toFixed(2)} mm)`, 'success');
     }
   };
 
@@ -160,6 +187,29 @@ export const VernierCaliperView: React.FC = () => {
         </div>
       </div>
 
+      {/* Specimen Bench Selector */}
+      <div className="p-4 rounded-2xl bg-white/80 border border-[#DCE5F2] shadow-sm flex flex-wrap items-center justify-between gap-3 backdrop-blur-xl">
+        <div className="flex items-center gap-2">
+          <Package className="w-4 h-4 text-[#4385E8]" />
+          <span className="text-xs font-bold text-[#1D2940]">Test Specimen Bench:</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {CALIPER_SPECIMENS.map((spec) => (
+            <button
+              key={spec.id}
+              onClick={() => handleSelectSpecimen(spec.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                selectedSpecimen === spec.id
+                  ? 'bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {spec.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Main Interactive Caliper Stage */}
       <div className="relative w-full overflow-x-auto p-8 rounded-3xl bg-gradient-to-b from-white/95 to-[#F1F5FB] border border-white shadow-xl flex flex-col items-center justify-center min-h-[380px]">
         {/* Caliper SVG Rendering */}
@@ -208,6 +258,70 @@ export const VernierCaliperView: React.FC = () => {
                 stroke="#94A3B8"
                 strokeWidth="1"
               />
+
+              {/* Clamped Specimen Between Jaws */}
+              {selectedSpecimen === 'block' && sliderOffsetPx > 6 && (
+                <g>
+                  <rect
+                    x="95"
+                    y="150"
+                    width={sliderOffsetPx}
+                    height="45"
+                    rx="2"
+                    fill="#F1F5F9"
+                    stroke="#475569"
+                    strokeWidth="1.2"
+                  />
+                  <text
+                    x={95 + sliderOffsetPx / 2}
+                    y="176"
+                    textAnchor="middle"
+                    fontSize="9"
+                    fontWeight="bold"
+                    fill="#334155"
+                    fontFamily="monospace"
+                  >
+                    18.50mm
+                  </text>
+                </g>
+              )}
+
+              {selectedSpecimen === 'cylinder' && sliderOffsetPx > 6 && (
+                <g>
+                  <rect
+                    x="95"
+                    y="145"
+                    width={sliderOffsetPx}
+                    height="60"
+                    rx="3"
+                    fill="url(#beamSteel)"
+                    stroke="#334155"
+                    strokeWidth="1.2"
+                  />
+                  <line x1={95 + sliderOffsetPx * 0.25} y1="145" x2={95 + sliderOffsetPx * 0.25} y2="205" stroke="white" opacity="0.6" strokeWidth="1.5" />
+                </g>
+              )}
+
+              {selectedSpecimen === 'washer' && sliderOffsetPx > 6 && (
+                <g>
+                  <circle
+                    cx={95 + sliderOffsetPx / 2}
+                    cy="175"
+                    r={sliderOffsetPx / 2}
+                    fill="url(#beamSteel)"
+                    stroke="#334155"
+                    strokeWidth="1.2"
+                  />
+                  <circle
+                    cx={95 + sliderOffsetPx / 2}
+                    cy="175"
+                    r={sliderOffsetPx / 4}
+                    fill="#F1F5FB"
+                    stroke="#475569"
+                    strokeWidth="1"
+                  />
+                </g>
+              )}
 
               {/* Fixed Upper Internal Jaw */}
               <path
