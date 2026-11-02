@@ -5,6 +5,8 @@ import { Header } from './components/layout/Header';
 import { FooterStatus } from './components/layout/FooterStatus';
 import { Toast } from './components/common/Toast';
 import { CalibrationModal } from './modules/calibration/CalibrationModal';
+import { AuthModal } from './components/auth/AuthModal';
+import { SubscriptionModal } from './modules/subscription/SubscriptionModal';
 
 // Views
 import { DashboardView } from './modules/dashboard/DashboardView';
@@ -13,6 +15,9 @@ import { PrecisionStudioView } from './modules/precision-studio/PrecisionStudioV
 import { VernierCaliperView } from './modules/vernier-caliper/VernierCaliperView';
 import { ScrewGaugeView } from './modules/screw-gauge/ScrewGaugeView';
 import { ScientificInstrumentsView } from './modules/scientific-instruments/ScientificInstrumentsView';
+import { VernierHeightGaugeView } from './modules/scientific-instruments/VernierHeightGaugeView';
+import { DialIndicatorView } from './modules/scientific-instruments/DialIndicatorView';
+import { DigitalCompassView } from './modules/scientific-instruments/DigitalCompassView';
 import { UnitConverterView } from './modules/unit-converter/UnitConverterView';
 import { CalibrationView } from './modules/calibration/CalibrationView';
 import { ProjectsView } from './modules/projects/ProjectsView';
@@ -38,6 +43,12 @@ export const App: React.FC = () => {
         return <ScrewGaugeView />;
       case 'scientific-instruments':
         return <ScientificInstrumentsView />;
+      case 'vernier-height-gauge':
+        return <VernierHeightGaugeView />;
+      case 'dial-indicator':
+        return <DialIndicatorView />;
+      case 'digital-compass':
+        return <DigitalCompassView />;
       case 'unit-converter':
         return <UnitConverterView />;
       case 'calibration':
@@ -82,6 +93,8 @@ export const App: React.FC = () => {
 
       {/* Global Modals & Notifications */}
       <CalibrationModal />
+      <AuthModal />
+      <SubscriptionModal />
       <Toast />
     </div>
   );

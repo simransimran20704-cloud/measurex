@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../../stores/appStore';
+import { useAuthStore } from '../../stores/authStore';
 import {
   Search,
   Zap,
@@ -8,10 +9,16 @@ import {
   FolderKanban,
   Clock,
   Settings,
+  Crown,
+  LogOut,
+  User,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const { activeTab, setActiveTab, searchQuery, setSearchQuery, showToast } = useAppStore();
+  const { user, isAuthenticated, openAuthModal, openSubscriptionModal, logout } = useAuthStore();
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-20 w-full px-8 py-3.5 flex items-center justify-between bg-[#F8FAFF]/80 backdrop-blur-xl border-b border-[#E2E8F0]/60">
@@ -88,23 +95,84 @@ export const Header: React.FC = () => {
 
         {/* Settings Button */}
         <button
-          onClick={() => showToast('Settings: All measurement modules configured.', 'info')}
+          onClick={openSubscriptionModal}
+          title="Subscription & Metrology Settings"
           className="w-8 h-8 rounded-full bg-white/80 border border-[#E2E8F0] flex items-center justify-center text-[#66758D] hover:text-[#1D2940] hover:bg-white transition-all shadow-sm"
         >
           <Settings className="w-4 h-4" />
         </button>
 
-        {/* User Profile Avatar with Aurora Ring */}
-        <div className="relative group cursor-pointer" onClick={() => showToast('Simran - Lead Instrumentation Engineer', 'info')}>
-          <div className="w-8 h-8 rounded-full p-[1.5px] bg-gradient-to-tr from-[#36C6DA] via-[#4385E8] to-[#8064E8] shadow-sm">
-            <img
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=120"
-              alt="User profile"
-              className="w-full h-full rounded-full object-cover border border-white"
-            />
+        {/* User Profile Avatar with Dropdown */}
+        {isAuthenticated && user ? (
+          <div className="relative">
+            <button
+              onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+              className="flex items-center gap-2 p-1 rounded-full hover:bg-white/80 transition-all"
+            >
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full p-[1.5px] bg-gradient-to-tr from-[#36C6DA] via-[#4385E8] to-[#8064E8] shadow-sm">
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-full h-full rounded-full object-cover border border-white"
+                  />
+                </div>
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
+              </div>
+              <span className="hidden lg:inline text-xs font-bold text-[#1D2940] max-w-[100px] truncate">
+                {user.name}
+              </span>
+            </button>
+
+            {/* Dropdown Menu */}
+            {userDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-[#DCE5F2] shadow-xl p-3 flex flex-col gap-2 z-50 animate-in fade-in">
+                <div className="flex items-center gap-3 p-2 bg-[#F8FAFF] rounded-xl border border-slate-100">
+                  <img src={user.avatar} className="w-10 h-10 rounded-full object-cover border" alt="" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-bold text-xs text-[#1D2940] truncate">{user.name}</span>
+                    <span className="text-[10px] text-slate-500 truncate">{user.email}</span>
+                    <span className="mt-1 inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 uppercase tracking-wider w-fit">
+                      <Crown className="w-2.5 h-2.5 fill-amber-500 text-amber-600" />
+                      {user.plan} Plan
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setUserDropdownOpen(false);
+                    openSubscriptionModal();
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[#1D2940] hover:bg-slate-50 rounded-xl transition-colors"
+                >
+                  <Crown className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Manage Subscription</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setUserDropdownOpen(false);
+                    logout();
+                    showToast('Logged out of session', 'info');
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
           </div>
-          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
-        </div>
+        ) : (
+          <button
+            onClick={() => openAuthModal('login')}
+            className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white text-xs font-bold shadow-sm hover:scale-[1.02] transition-all flex items-center gap-1.5"
+          >
+            <User className="w-3.5 h-3.5" />
+            <span>Sign In</span>
+          </button>
+        )}
       </div>
     </header>
   );

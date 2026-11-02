@@ -13,6 +13,10 @@ export type NavTab =
   | 'history'
   | 'export'
   | 'image-measurement'
+  | 'vernier-height-gauge'
+  | 'dial-indicator'
+  | 'digital-compass'
+  | 'subscription'
   | 'help';
 
 interface AppState {

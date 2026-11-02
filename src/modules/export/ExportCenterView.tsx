@@ -3,6 +3,7 @@ import { useHistoryStore } from '../../stores/historyStore';
 import { useProjectStore } from '../../stores/projectStore';
 import { useCalibrationStore } from '../../stores/calibrationStore';
 import { useAppStore } from '../../stores/appStore';
+import { useAuthStore } from '../../stores/authStore';
 import { jsPDF } from 'jspdf';
 import {
   Download,
@@ -19,115 +20,124 @@ export const ExportCenterView: React.FC = () => {
   const { projects } = useProjectStore();
   const { profile } = useCalibrationStore();
   const { showToast } = useAppStore();
+  const { user, requireAuth } = useAuthStore();
 
   // Export CSV
   const handleExportCSV = () => {
-    if (items.length === 0) {
-      showToast('No measurement history to export', 'warning');
-      return;
-    }
-    const headers = ['ID', 'Tool', 'Title', 'Value', 'Unit', 'NumericValue', 'Date', 'Details'];
-    const rows = items.map((i) => [
-      i.id,
-      `"${i.tool}"`,
-      `"${i.title}"`,
-      `"${i.value}"`,
-      `"${i.unit}"`,
-      i.rawNumericValue,
-      `"${new Date(i.timestamp).toISOString()}"`,
-      `"${i.details || ''}"`,
-    ]);
+    requireAuth('export CSV measurement records', () => {
+      if (items.length === 0) {
+        showToast('No measurement history to export', 'warning');
+        return;
+      }
+      const headers = ['ID', 'Tool', 'Title', 'Value', 'Unit', 'NumericValue', 'Date', 'Details'];
+      const rows = items.map((i) => [
+        i.id,
+        `"${i.tool}"`,
+        `"${i.title}"`,
+        `"${i.value}"`,
+        `"${i.unit}"`,
+        i.rawNumericValue,
+        `"${new Date(i.timestamp).toISOString()}"`,
+        `"${i.details || ''}"`,
+      ]);
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `MeasureX_Report_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Exported CSV measurement data!', 'success');
+      const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `MeasureX_Report_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Exported CSV measurement data!', 'success');
+    });
   };
 
   // Export PDF Report using jsPDF
   const handleExportPDF = () => {
-    try {
-      const doc = new jsPDF();
-      doc.setFont('helvetica');
+    requireAuth('generate official PDF engineering reports', () => {
+      try {
+        const doc = new jsPDF();
+        doc.setFont('helvetica');
 
-      // Header
-      doc.setFillColor(67, 133, 232);
-      doc.rect(0, 0, 210, 24, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
-      doc.text('MeasureX - Technical Measurement Report', 14, 16);
+        // Header
+        doc.setFillColor(67, 133, 232);
+        doc.rect(0, 0, 210, 26, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.text('MeasureX - Certified Measurement Report', 14, 16);
 
-      // Metadata
-      doc.setTextColor(50, 50, 50);
-      doc.setFontSize(10);
-      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 34);
-      doc.text(`Calibration Profile: ${profile.name} (${(profile.pixelsPerMm * 25.4).toFixed(1)} DPI)`, 14, 40);
-      doc.text(`Calibration Status: ${profile.isCalibrated ? 'VERIFIED PHYSICAL' : 'UNCALIBRATED ESTIMATE'}`, 14, 46);
-
-      // Separator
-      doc.setDrawColor(200, 200, 200);
-      doc.line(14, 52, 196, 52);
-
-      // Measurement Records
-      doc.setFontSize(12);
-      doc.setTextColor(29, 41, 64);
-      doc.text('Measurement Records', 14, 60);
-
-      let y = 68;
-      items.forEach((item, index) => {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`${index + 1}. [${item.tool}] ${item.title}: ${item.value}`, 16, y);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`${new Date(item.timestamp).toLocaleString()} | ${item.details || 'Standard verification'}`, 20, y + 5);
+        // Metadata
         doc.setTextColor(50, 50, 50);
-        y += 12;
-      });
+        doc.setFontSize(10);
+        doc.text(`Certified Engineer: ${user?.name || 'Authorized Metrologist'} (${user?.plan?.toUpperCase()} Plan)`, 14, 34);
+        doc.text(`Generated: ${new Date().toLocaleString()} | Email: ${user?.email || 'N/A'}`, 14, 40);
+        doc.text(`Calibration Profile: ${profile.name} (${(profile.pixelsPerMm * 25.4).toFixed(1)} DPI)`, 14, 46);
+        doc.text(`Calibration Status: ${profile.isCalibrated ? 'VERIFIED PHYSICAL STANDARD' : 'UNCALIBRATED ESTIMATE'}`, 14, 52);
 
-      // Footer
-      doc.setFontSize(8);
-      doc.setTextColor(150, 150, 150);
-      doc.text('Generated by MeasureX - Universal Digital Measurement Platform', 14, 285);
+        // Separator
+        doc.setDrawColor(200, 200, 200);
+        doc.line(14, 56, 196, 56);
 
-      doc.save(`MeasureX_Technical_Report_${Date.now()}.pdf`);
-      showToast('Generated Official PDF Measurement Report!', 'success');
-    } catch (e) {
-      console.error(e);
-      showToast('Error generating PDF report', 'warning');
-    }
+        // Measurement Records
+        doc.setFontSize(12);
+        doc.setTextColor(29, 41, 64);
+        doc.text('Measurement Records', 14, 64);
+
+        let y = 72;
+        items.forEach((item, index) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${index + 1}. [${item.tool}] ${item.title}: ${item.value}`, 16, y);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(100, 100, 100);
+          doc.text(`${new Date(item.timestamp).toLocaleString()} | ${item.details || 'Standard verification'}`, 20, y + 5);
+          doc.setTextColor(50, 50, 50);
+          y += 12;
+        });
+
+        // Footer
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Generated by MeasureX - Universal Digital Measurement Platform', 14, 285);
+
+        doc.save(`MeasureX_Technical_Report_${Date.now()}.pdf`);
+        showToast('Generated Official PDF Measurement Report!', 'success');
+      } catch (e) {
+        console.error(e);
+        showToast('Error generating PDF report', 'warning');
+      }
+    });
   };
 
   // Export JSON Backup
   const handleExportJSON = () => {
-    const backup = {
-      app: 'MeasureX',
-      version: '1.0.0',
-      exportDate: new Date().toISOString(),
-      calibration: profile,
-      projects,
-      history: items,
-    };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `MeasureX_Full_Backup_${Date.now()}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Exported full JSON project workspace!', 'success');
+    requireAuth('export JSON project archive', () => {
+      const backup = {
+        app: 'MeasureX',
+        version: '1.0.0',
+        exportDate: new Date().toISOString(),
+        author: user,
+        calibration: profile,
+        projects,
+        history: items,
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `MeasureX_Full_Backup_${Date.now()}.json`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Exported full JSON project workspace!', 'success');
+    });
   };
 
   return (

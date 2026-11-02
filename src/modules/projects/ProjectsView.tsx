@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useProjectStore } from '../../stores/projectStore';
 import { useAppStore } from '../../stores/appStore';
+import { useAuthStore } from '../../stores/authStore';
 import { MagneticCard } from '../../components/common/MagneticCard';
 import {
   FolderKanban,
@@ -12,11 +13,13 @@ import {
   Layers,
   Compass,
   Cpu,
+  Lock,
 } from 'lucide-react';
 
 export const ProjectsView: React.FC = () => {
   const { projects, createProject, deleteProject, duplicateProject, setActiveProject } = useProjectStore();
   const { setActiveTab, showToast } = useAppStore();
+  const { requireAuth, isAuthenticated, user, openAuthModal } = useAuthStore();
 
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -25,10 +28,12 @@ export const ProjectsView: React.FC = () => {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
-    createProject(newTitle.trim(), newType);
-    showToast(`Created project "${newTitle.trim()}"`, 'success');
-    setNewTitle('');
-    setIsCreating(false);
+    requireAuth('create and persist projects in MeasureX Cloud', () => {
+      createProject(newTitle.trim(), newType);
+      showToast(`Created project "${newTitle.trim()}"`, 'success');
+      setNewTitle('');
+      setIsCreating(false);
+    });
   };
 
   const getThumbnail = (type: string) => {
@@ -59,7 +64,7 @@ export const ProjectsView: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsCreating(true)}
+          onClick={() => requireAuth('create and save projects', () => setIsCreating(true))}
           className="px-6 py-3 rounded-full bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white font-bold text-xs shadow-md shadow-brand-blue/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />

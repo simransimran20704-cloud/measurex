@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore, NavTab } from '../../stores/appStore';
+import { useAuthStore } from '../../stores/authStore';
 import { Logo } from '../common/Logo';
 import {
   Home,
@@ -20,6 +21,7 @@ import {
 
 export const Sidebar: React.FC = () => {
   const { activeTab, setActiveTab, showToast } = useAppStore();
+  const { user, openSubscriptionModal, openAuthModal, isAuthenticated } = useAuthStore();
   const [instrumentsOpen, setInstrumentsOpen] = useState(true);
 
   const navItems = [
@@ -35,6 +37,9 @@ export const Sidebar: React.FC = () => {
       subItems: [
         { id: 'vernier-caliper' as NavTab, label: 'Vernier Caliper' },
         { id: 'screw-gauge' as NavTab, label: 'Screw Gauge' },
+        { id: 'vernier-height-gauge' as NavTab, label: 'Height Gauge' },
+        { id: 'dial-indicator' as NavTab, label: 'Dial Indicator' },
+        { id: 'digital-compass' as NavTab, label: 'Digital Compass' },
         { id: 'scientific-instruments' as NavTab, label: 'All Instruments' },
       ],
     },
@@ -144,20 +149,27 @@ export const Sidebar: React.FC = () => {
 
         {/* Premium Card */}
         <div className="relative overflow-hidden rounded-2xl p-3.5 bg-gradient-to-br from-[#F5F3FF]/90 via-white/80 to-[#EEF2FF]/90 border border-violet-200/70 shadow-lg shadow-purple-500/5 backdrop-blur-xl">
-          <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center text-amber-500 shadow-sm">
-              <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center text-amber-500 shadow-sm">
+                <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+              </div>
+              <span className="font-bold text-xs text-[#1D2940]">MeasureX Pro</span>
             </div>
-            <span className="font-bold text-xs text-[#1D2940]">Premium Pro</span>
+            <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 uppercase tracking-wider">
+              {user?.plan || 'Free'}
+            </span>
           </div>
           <p className="text-[11px] text-[#66758D] mb-2.5 font-medium leading-snug">
-            Unlock Advanced Features & Unlimited Cloud Sync
+            {user?.plan === 'pro' || user?.plan === 'enterprise'
+              ? 'All 7 instruments & cloud sync active.'
+              : 'Unlock 7 instruments & cloud sync.'}
           </p>
           <button
-            onClick={() => showToast('MeasureX Pro features unlocked in trial mode!', 'success')}
+            onClick={openSubscriptionModal}
             className="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white text-[11px] font-semibold hover:shadow-md hover:shadow-purple-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
           >
-            <span>Upgrade Now</span>
+            <span>{user?.plan === 'free' ? 'Upgrade Plan' : 'Manage Subscription'}</span>
             <span>&rarr;</span>
           </button>
         </div>

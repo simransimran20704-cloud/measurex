@@ -84,6 +84,34 @@ describe('Metrology Instruments & Calibration Engine', () => {
     });
   });
 
+  describe('Digital Compass & Circle Metrology', () => {
+    it('computes exact diameter, circumference and area for R=50mm', () => {
+      const radius = 50;
+      const diameter = radius * 2;
+      const circumference = 2 * Math.PI * radius;
+      const area = Math.PI * radius * radius;
+
+      expect(diameter).toBe(100);
+      expect(circumference).toBeCloseTo(314.159, 2);
+      expect(area).toBeCloseTo(7853.98, 1);
+    });
+  });
+
+  describe('Dial Indicator & Runout Metrology', () => {
+    it('calculates 100-division dial pointer deflection (0.01mm per div)', () => {
+      const displacement = 0.45; // 45 divisions
+      const needleAngleDeg = (displacement / 1.0) * 360;
+      expect(needleAngleDeg).toBeCloseTo(162, 1);
+    });
+
+    it('computes Total Indicator Reading (TIR) from min and max runout', () => {
+      const min = 2.42;
+      const max = 2.58;
+      const tir = Number((max - min).toFixed(3));
+      expect(tir).toBe(0.16);
+    });
+  });
+
   describe('Screen Calibration System', () => {
     it('accurately computes screen PPM from standard bank card width', () => {
       const knownCardMm = STANDARD_OBJECTS.creditCard.widthMm; // 85.60 mm
