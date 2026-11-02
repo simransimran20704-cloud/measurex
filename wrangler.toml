@@ -6,15 +6,22 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENVIRONMENT = "production"
 
-# Cloudflare D1 Database Binding (Active & 100% Free - No Payment Required)
+# Cloudflare D1 Database Binding (Active & Operational)
 [[d1_databases]]
 binding = "DB"
 database_name = "measurex-db"
 database_id = "f0432b03-03aa-4e73-9015-af46b32e54a2"
 
-# Cloudflare R2 Private Storage Bucket Binding (Disabled - Prevents Payment Gate Block)
-# All project drawings, measurements, and user data are stored directly in D1 Database.
-# To enable R2 in the future after adding billing, uncomment below:
+# ==============================================================================
+# Cloudflare R2 Document Vault Binding (DOCUMENTS_VAULT)
+# Status: PRESERVED & READY (Pending Cloudflare Account Entitlement Activation)
+# Target Bucket: measurex-documents
+#
+# UNLOCK INSTRUCTION:
+# Once R2 entitlement is unlocked in Cloudflare Dashboard and the bucket
+# 'measurex-documents' is created, uncomment the 3 lines below to activate:
+#
 # [[r2_buckets]]
 # binding = "DOCUMENTS_VAULT"
 # bucket_name = "measurex-documents"
+# ==============================================================================

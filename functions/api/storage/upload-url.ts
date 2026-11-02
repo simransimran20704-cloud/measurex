@@ -18,6 +18,19 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     return jsonResponse({ error: 'UNAUTHORIZED', message: 'Authentication required' }, 401);
   }
 
+  // Graceful degradation when Cloudflare R2 is pending account entitlement (Error 10042)
+  if (!env.DOCUMENTS_VAULT) {
+    return jsonResponse(
+      {
+        error: 'STORAGE_UNAVAILABLE',
+        message:
+          'Cloudflare R2 document vault is currently unavailable (account entitlement error 10042 pending). Measurements, calibrations, and blueprints are safely stored in Cloudflare D1 database.',
+        isR2Active: false,
+      },
+      503
+    );
+  }
+
   try {
     const body = (await request.json().catch(() => ({}))) as any;
     const { filename, mimeType, sizeBytes } = body;
