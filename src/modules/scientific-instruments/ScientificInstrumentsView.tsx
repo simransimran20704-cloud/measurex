@@ -77,22 +77,22 @@ export const ScientificInstrumentsView: React.FC = () => {
     {
       id: 'protractor',
       name: 'Digital Angle Protractor',
-      status: 'Interactive',
+      status: 'Ready',
       category: 'Angular',
       description: '360° rotary measurement arm with real-time digital degree readout.',
       icon: Compass,
       color: 'text-[#16A078] bg-emerald-50 border-emerald-200',
-      action: null,
+      action: () => setActiveTab('digital-protractor'),
     },
     {
       id: 'scale',
       name: 'Digital Precision Scale',
-      status: 'Interactive',
+      status: 'Ready',
       category: 'Mass',
       description: 'High-precision lab balance with Tare function and instant unit switching.',
       icon: Scale,
       color: 'text-[#36C6DA] bg-cyan-50 border-cyan-200',
-      action: null,
+      action: () => setActiveTab('digital-scale'),
     },
   ];
 
@@ -169,6 +169,13 @@ export const ScientificInstrumentsView: React.FC = () => {
               {protractorAngle}&deg;
             </span>
           </div>
+          <button
+            onClick={() => setActiveTab('digital-protractor')}
+            className="mt-3 w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-emerald-200"
+          >
+            <span>Launch Full 360° Laboratory Protractor</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {/* 2. Digital Precision Weighing Scale */}
@@ -217,6 +224,13 @@ export const ScientificInstrumentsView: React.FC = () => {
               {scaleWeight.toFixed(1)} g
             </span>
           </div>
+          <button
+            onClick={() => setActiveTab('digital-scale')}
+            className="mt-3 w-full py-2 px-3 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-cyan-200"
+          >
+            <span>Launch Full 0.001g Analytical Balance</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 

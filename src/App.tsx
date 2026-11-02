@@ -7,6 +7,7 @@ import { Toast } from './components/common/Toast';
 import { CalibrationModal } from './modules/calibration/CalibrationModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { SubscriptionModal } from './modules/subscription/SubscriptionModal';
+import { BillingCheckoutModal } from './modules/subscription/BillingCheckoutModal';
 
 // Views
 import { DashboardView } from './modules/dashboard/DashboardView';
@@ -18,6 +19,8 @@ import { ScientificInstrumentsView } from './modules/scientific-instruments/Scie
 import { VernierHeightGaugeView } from './modules/scientific-instruments/VernierHeightGaugeView';
 import { DialIndicatorView } from './modules/scientific-instruments/DialIndicatorView';
 import { DigitalCompassView } from './modules/scientific-instruments/DigitalCompassView';
+import { DigitalProtractorView } from './modules/scientific-instruments/DigitalProtractorView';
+import { DigitalScaleView } from './modules/scientific-instruments/DigitalScaleView';
 import { UnitConverterView } from './modules/unit-converter/UnitConverterView';
 import { CalibrationView } from './modules/calibration/CalibrationView';
 import { ProjectsView } from './modules/projects/ProjectsView';
@@ -49,6 +52,10 @@ export const App: React.FC = () => {
         return <DialIndicatorView />;
       case 'digital-compass':
         return <DigitalCompassView />;
+      case 'digital-protractor':
+        return <DigitalProtractorView />;
+      case 'digital-scale':
+        return <DigitalScaleView />;
       case 'unit-converter':
         return <UnitConverterView />;
       case 'calibration':
@@ -95,6 +102,7 @@ export const App: React.FC = () => {
       <CalibrationModal />
       <AuthModal />
       <SubscriptionModal />
+      <BillingCheckoutModal />
       <Toast />
     </div>
   );

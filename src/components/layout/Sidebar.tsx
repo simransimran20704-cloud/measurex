@@ -40,6 +40,8 @@ export const Sidebar: React.FC = () => {
         { id: 'vernier-height-gauge' as NavTab, label: 'Height Gauge' },
         { id: 'dial-indicator' as NavTab, label: 'Dial Indicator' },
         { id: 'digital-compass' as NavTab, label: 'Digital Compass' },
+        { id: 'digital-protractor' as NavTab, label: 'Digital Protractor' },
+        { id: 'digital-scale' as NavTab, label: 'Precision Scale' },
         { id: 'scientific-instruments' as NavTab, label: 'All Instruments' },
       ],
     },

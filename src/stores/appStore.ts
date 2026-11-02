@@ -16,6 +16,8 @@ export type NavTab =
   | 'vernier-height-gauge'
   | 'dial-indicator'
   | 'digital-compass'
+  | 'digital-protractor'
+  | 'digital-scale'
   | 'subscription'
   | 'help';
 

@@ -4,7 +4,15 @@ import { useAppStore } from '../../stores/appStore';
 import { X, Check, Crown, Sparkles, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
 
 export const SubscriptionModal: React.FC = () => {
-  const { isSubscriptionModalOpen, closeSubscriptionModal, user, upgradePlan, openAuthModal, isAuthenticated } = useAuthStore();
+  const {
+    isSubscriptionModalOpen,
+    closeSubscriptionModal,
+    user,
+    upgradePlan,
+    openAuthModal,
+    isAuthenticated,
+    openBillingModal,
+  } = useAuthStore();
   const { showToast } = useAppStore();
 
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
@@ -23,8 +31,14 @@ export const SubscriptionModal: React.FC = () => {
       return;
     }
 
-    upgradePlan(plan);
-    showToast(`🎉 Upgraded successfully to MeasureX ${plan.toUpperCase()}!`, 'success');
+    if (plan === 'free') {
+      upgradePlan('free');
+      showToast('Switched to Starter Basic plan.', 'info');
+      return;
+    }
+
+    // Open Checkout Billing Form
+    openBillingModal(plan);
   };
 
   const plans = [
