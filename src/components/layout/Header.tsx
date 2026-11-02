@@ -105,30 +105,36 @@ export const Header: React.FC = () => {
         {/* User Profile Avatar with Dropdown */}
         {isAuthenticated && user ? (
           <div className="relative">
-            <button
-              onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-              className="flex items-center gap-2 p-1 rounded-full hover:bg-white/80 transition-all"
-            >
-              <div className="relative">
-                <div className="w-8 h-8 rounded-full p-[1.5px] bg-gradient-to-tr from-[#36C6DA] via-[#4385E8] to-[#8064E8] shadow-sm">
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="w-full h-full rounded-full object-cover border border-white"
-                  />
-                </div>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
-              </div>
-              <span className="hidden lg:inline text-xs font-bold text-[#1D2940] max-w-[100px] truncate">
-                {user.name}
-              </span>
-            </button>
+            {(() => {
+              const emailInitial = (
+                user.email ? user.email.trim()[0] : user.name ? user.name.trim()[0] : 'U'
+              ).toUpperCase();
+
+              return (
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 p-1 rounded-full hover:bg-white/80 transition-all"
+                >
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#4385E8] to-[#8064E8] text-white flex items-center justify-center font-extrabold text-xs shadow-sm uppercase border border-white">
+                      {emailInitial}
+                    </div>
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
+                  </div>
+                  <span className="hidden lg:inline text-xs font-bold text-[#1D2940] max-w-[100px] truncate">
+                    {user.name}
+                  </span>
+                </button>
+              );
+            })()}
 
             {/* Dropdown Menu */}
             {userDropdownOpen && (
               <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-[#DCE5F2] shadow-xl p-3 flex flex-col gap-2 z-50 animate-in fade-in">
                 <div className="flex items-center gap-3 p-2 bg-[#F8FAFF] rounded-xl border border-slate-100">
-                  <img src={user.avatar} className="w-10 h-10 rounded-full object-cover border" alt="" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#4385E8] to-[#8064E8] text-white flex items-center justify-center font-black text-sm shadow-sm uppercase border border-white flex-shrink-0">
+                    {(user.email ? user.email.trim()[0] : user.name ? user.name.trim()[0] : 'U').toUpperCase()}
+                  </div>
                   <div className="flex flex-col min-w-0">
                     <span className="font-bold text-xs text-[#1D2940] truncate">{user.name}</span>
                     <span className="text-[10px] text-slate-500 truncate">{user.email}</span>

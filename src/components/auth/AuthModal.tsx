@@ -35,6 +35,7 @@ export const AuthModal: React.FC = () => {
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   if (!isAuthModalOpen) return null;
 
@@ -43,6 +44,7 @@ export const AuthModal: React.FC = () => {
     setPassword(demoPass);
     if (demoName) setName(demoName);
     setErrorMessage(null);
+    setSuccessMessage(null);
     showToast(`Autofilled credentials for ${demoEmail}`, 'info');
   };
 
@@ -65,6 +67,7 @@ export const AuthModal: React.FC = () => {
         return;
       }
 
+      setSuccessMessage(null);
       showToast(`Welcome back, ${email.split('@')[0]}!`, 'success');
     } else {
       if (!name.trim() || !email.trim() || !password.trim()) {
@@ -77,11 +80,17 @@ export const AuthModal: React.FC = () => {
       const res = signup(name, email, password);
       if (!res.success) {
         setErrorMessage(res.error || 'Registration failed');
+        setSuccessMessage(null);
         showToast(res.error || 'Registration failed', 'warning');
         return;
       }
 
-      showToast(`Account registered for ${name}! Pro trial active.`, 'success');
+      // DO NOT DIRECT SIGN IN! User must explicitly sign in with their password
+      setMode('login');
+      setPassword('');
+      setErrorMessage(null);
+      setSuccessMessage(`Account created for ${name}! Please sign in with your password to continue.`);
+      showToast('Account created! Please sign in with your password.', 'info');
     }
   };
 
@@ -109,6 +118,17 @@ export const AuthModal: React.FC = () => {
           </div>
         )}
 
+        {/* Success message banner when account is created */}
+        {successMessage && (
+          <div className="mx-6 mt-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 flex items-start gap-2.5 text-xs text-emerald-900 leading-relaxed animate-in fade-in shadow-xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <span className="font-bold block text-emerald-800">Account Created Successfully!</span>
+              <span>{successMessage}</span>
+            </div>
+          </div>
+        )}
+
         {/* Error message banner if authentication fails */}
         {errorMessage && (
           <div className="mx-6 mt-4 p-3 rounded-2xl bg-red-50 border border-red-200/90 flex items-start gap-2.5 text-xs text-red-900 leading-relaxed animate-in fade-in">
@@ -127,6 +147,7 @@ export const AuthModal: React.FC = () => {
               onClick={() => {
                 setMode('login');
                 setErrorMessage(null);
+                setSuccessMessage(null);
               }}
               className={`py-2 rounded-xl text-xs font-bold transition-all ${
                 mode === 'login' ? 'bg-white text-[#4385E8] shadow-sm' : 'text-slate-500 hover:text-slate-800'
@@ -138,6 +159,7 @@ export const AuthModal: React.FC = () => {
               onClick={() => {
                 setMode('signup');
                 setErrorMessage(null);
+                setSuccessMessage(null);
               }}
               className={`py-2 rounded-xl text-xs font-bold transition-all ${
                 mode === 'signup' ? 'bg-white text-[#8064E8] shadow-sm' : 'text-slate-500 hover:text-slate-800'

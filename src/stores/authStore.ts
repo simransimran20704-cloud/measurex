@@ -294,27 +294,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
         localStorage.setItem(STORAGE_USERS_DB_KEY, JSON.stringify(updatedUsers));
       } catch (e) {}
 
-      const profile: UserProfile = {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        avatar: newUser.avatar,
-        plan: newUser.plan,
-        joinedDate: newUser.joinedDate,
-      };
-
-      try {
-        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(profile));
-      } catch (e) {}
-
-      set({
-        user: profile,
-        isAuthenticated: true,
-        isAuthModalOpen: false,
-        authPromptReason: null,
-      });
-
+      // NOTE: Do NOT sign in automatically upon creation. User must explicitly sign in with their password.
       return { success: true };
     },
 

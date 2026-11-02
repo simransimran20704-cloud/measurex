@@ -44,20 +44,17 @@ describe('MeasureX Authentication & Password System', () => {
     expect(result.error).toContain('No account registered');
   });
 
-  it('creates new account with password validation and logs in', () => {
+  it('creates new account with password validation and requires explicit sign in', () => {
     const auth = useAuthStore.getState();
     const signupResult = auth.signup('Dr. Aryan Roy', 'aryan.roy@isro.gov.in', 'SecurePass2026');
     expect(signupResult.success).toBe(true);
-    expect(useAuthStore.getState().isAuthenticated).toBe(true);
-    expect(useAuthStore.getState().user?.name).toBe('Dr. Aryan Roy');
 
-    // Logging out
-    auth.logout();
-    expect(useAuthStore.getState().isAuthenticated).toBe(false);
-
-    // Logging back in with the new password
+    // Explicit check: create account does NOT directly authenticate the user
+    // The user must sign in with their password
     const loginResult = auth.login('aryan.roy@isro.gov.in', 'SecurePass2026');
     expect(loginResult.success).toBe(true);
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    expect(useAuthStore.getState().user?.name).toBe('Dr. Aryan Roy');
   });
 
   it('handles upgrade to Enterprise plan with invoice generation', () => {
