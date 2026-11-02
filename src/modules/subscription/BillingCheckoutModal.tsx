@@ -76,23 +76,30 @@ export const BillingCheckoutModal: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi'>('card');
 
   // Customer form state
-  const [fullName, setFullName] = useState(user?.name || 'Simran Sharma');
-  const [email, setEmail] = useState(user?.email || 'simran.sharma@measurex.io');
-  const [address, setAddress] = useState('108 Science & Technology Park');
-  const [city, setCity] = useState('Bengaluru');
-  const [stateName, setStateName] = useState('Karnataka');
-  const [postalCode, setPostalCode] = useState('560100');
+  const [fullName, setFullName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [stateName, setStateName] = useState('');
+  const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('India');
   const [gstNumber, setGstNumber] = useState('');
 
   // Card payment state
-  const [cardName, setCardName] = useState(user?.name || 'Simran Sharma');
-  const [cardNumber, setCardNumber] = useState('4532 •••• •••• 8824');
-  const [cardExpiry, setCardExpiry] = useState('12/28');
-  const [cardCvv, setCardCvv] = useState('742');
+  const [cardName, setCardName] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
 
   // UPI payment state
-  const [upiId, setUpiId] = useState('simran@okhdfcbank');
+  const [upiId, setUpiId] = useState('');
+
+  // Legal & Security Agreement
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // Validation errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [globalSecurityWarning, setGlobalSecurityWarning] = useState<string | null>(null);
 
   // Promo code
   const [promoCode, setPromoCode] = useState('');
@@ -114,6 +121,106 @@ export const BillingCheckoutModal: React.FC = () => {
   const taxRate = 0.18; // 18% standard GST/VAT
   const taxAmount = discountedSubtotal * taxRate;
   const totalAmount = discountedSubtotal + taxAmount;
+
+  // Quick Autofill for Test & Demonstration
+  const handleAutofillTestData = () => {
+    setFullName(user?.name || 'Simran Sharma');
+    setEmail(user?.email || 'simran.sharma@measurex.io');
+    setAddress('Flat 402, Metro Tech Residency, Electronic City');
+    setCity('Bengaluru');
+    setStateName('Karnataka');
+    setPostalCode('560100');
+    setCountry('India');
+    setGstNumber('29AABCU9603R1ZX');
+    setCardName(user?.name || 'Simran Sharma');
+    setCardNumber('4532 8920 1194 8824');
+    setCardExpiry('12/28');
+    setCardCvv('742');
+    setUpiId('simran@okhdfcbank');
+    setAgreedToTerms(true);
+    setErrors({});
+    setGlobalSecurityWarning(null);
+    showToast('Verified test billing details loaded', 'info');
+  };
+
+  // High-Security Strict Form Validation
+  const validateForm = (): boolean => {
+    const errs: Record<string, string> = {};
+
+    if (!fullName.trim() || fullName.trim().length < 3) {
+      errs.fullName = 'Full legal name is mandatory (minimum 3 characters).';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || !emailRegex.test(email.trim())) {
+      errs.email = 'Valid billing email address is mandatory (e.g. name@domain.com).';
+    }
+
+    if (!address.trim() || address.trim().length < 5) {
+      errs.address = 'Complete physical street address is mandatory for tax invoice.';
+    }
+
+    if (!city.trim() || city.trim().length < 2) {
+      errs.city = 'City name is required.';
+    }
+
+    if (!stateName.trim() || stateName.trim().length < 2) {
+      errs.stateName = 'State / Province is required.';
+    }
+
+    if (!postalCode.trim() || postalCode.trim().length < 4) {
+      errs.postalCode = 'Valid Postal / ZIP Code is mandatory.';
+    }
+
+    if (!country.trim()) {
+      errs.country = 'Country selection is required.';
+    }
+
+    // Payment validation
+    if (paymentMethod === 'card') {
+      if (!cardName.trim() || cardName.trim().length < 3) {
+        errs.cardName = 'Cardholder name as printed on card is mandatory.';
+      }
+
+      const cleanCardNum = cardNumber.replace(/[\s-]/g, '');
+      if (!cleanCardNum || !/^\d{15,16}$/.test(cleanCardNum)) {
+        errs.cardNumber = 'Valid 15 or 16-digit card number is required.';
+      }
+
+      const expiryRegex = /^(0[1-9]|1[0-2])\/([2-9][6-9]|[3-9][0-9])$/;
+      if (!cardExpiry.trim() || !expiryRegex.test(cardExpiry.trim())) {
+        errs.cardExpiry = 'Expiry must be in MM/YY format (future date e.g. 12/28).';
+      }
+
+      if (!cardCvv.trim() || !/^\d{3,4}$/.test(cardCvv.trim())) {
+        errs.cardCvv = 'CVV must be 3 or 4 security digits.';
+      }
+    } else {
+      // UPI validation
+      const upiRegex = /^[\w.\-_]{2,}@[a-zA-Z]{2,}$/;
+      if (!upiId.trim() || !upiRegex.test(upiId.trim())) {
+        errs.upiId = 'Valid UPI ID / VPA is required (e.g. user@okhdfcbank or phone@paytm).';
+      }
+    }
+
+    if (!agreedToTerms) {
+      errs.agreedToTerms = 'You must accept the Metrology SLA & PCI-DSS compliance agreement.';
+    }
+
+    setErrors(errs);
+
+    if (Object.keys(errs).length > 0) {
+      const missingCount = Object.keys(errs).length;
+      setGlobalSecurityWarning(
+        `🚨 High Security Enforcement: Subscription Blocked! ${missingCount} required billing/payment fields are missing or invalid. Complete all fields below to authorize.`
+      );
+      showToast('Subscription blocked: Incomplete billing information', 'warning');
+      return false;
+    }
+
+    setGlobalSecurityWarning(null);
+    return true;
+  };
 
   const handleApplyCoupon = (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,8 +246,9 @@ export const BillingCheckoutModal: React.FC = () => {
   const handleProcessPayment = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!fullName.trim() || !email.trim() || !address.trim()) {
-      showToast('Please enter billing address details', 'warning');
+    // STRICT CHECK: WITHOUT ALL INFORMATION FILLED, SUBSCRIPTION IS NOT GRANTED!
+    const isValid = validateForm();
+    if (!isValid) {
       return;
     }
 
@@ -354,32 +462,72 @@ export const BillingCheckoutModal: React.FC = () => {
             </div>
 
             {/* Right Column: Customer Details & Payment Method */}
-            <form onSubmit={handleProcessPayment} className="lg:col-span-7 flex flex-col gap-5">
+            <form onSubmit={handleProcessPayment} className="lg:col-span-7 flex flex-col gap-4">
+              {/* Quick Fill Test Bar */}
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Mandatory Security Verification Active</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleAutofillTestData}
+                  className="text-[10px] font-bold text-[#4385E8] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+                >
+                  Autofill Verified Test Credentials
+                </button>
+              </div>
+
+              {/* High Security Warning Alert */}
+              {globalSecurityWarning && (
+                <div className="p-3.5 rounded-2xl bg-red-50 border border-red-300 text-red-900 text-xs font-medium leading-relaxed flex items-start gap-2.5 animate-in fade-in">
+                  <div className="p-1 rounded-full bg-red-200/80 text-red-700 flex-shrink-0 mt-0.5">
+                    <X className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="font-bold block text-red-800">Security Gate Blocked</span>
+                    <span>{globalSecurityWarning}</span>
+                  </div>
+                </div>
+              )}
+
               {/* Customer Billing Details */}
               <div className="flex flex-col gap-3">
                 <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">
-                  1. Customer & Billing Address
+                  1. Customer & Billing Address (Mandatory)
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-slate-600">Full Name *</label>
                     <input
                       type="text"
-                      required
+                      placeholder="e.g. Simran Sharma"
                       value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 outline-none focus:border-[#4385E8]"
+                      onChange={(e) => {
+                        setFullName(e.target.value);
+                        if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: '' }));
+                      }}
+                      className={`w-full px-3 py-2 text-xs font-medium rounded-xl border outline-none transition-all ${
+                        errors.fullName ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#4385E8]'
+                      }`}
                     />
+                    {errors.fullName && <span className="text-[10px] text-red-600 font-bold">{errors.fullName}</span>}
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-slate-600">Billing Email *</label>
                     <input
                       type="email"
-                      required
+                      placeholder="name@domain.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 outline-none focus:border-[#4385E8]"
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errors.email) setErrors((prev) => ({ ...prev, email: '' }));
+                      }}
+                      className={`w-full px-3 py-2 text-xs font-medium rounded-xl border outline-none transition-all ${
+                        errors.email ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#4385E8]'
+                      }`}
                     />
+                    {errors.email && <span className="text-[10px] text-red-600 font-bold">{errors.email}</span>}
                   </div>
                 </div>
 
@@ -387,46 +535,73 @@ export const BillingCheckoutModal: React.FC = () => {
                   <label className="text-[11px] font-bold text-slate-600">Street Address *</label>
                   <input
                     type="text"
-                    required
+                    placeholder="Physical street address for tax invoice"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 outline-none focus:border-[#4385E8]"
+                    onChange={(e) => {
+                      setAddress(e.target.value);
+                      if (errors.address) setErrors((prev) => ({ ...prev, address: '' }));
+                    }}
+                    className={`w-full px-3 py-2 text-xs font-medium rounded-xl border outline-none transition-all ${
+                      errors.address ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#4385E8]'
+                    }`}
                   />
+                  {errors.address && <span className="text-[10px] text-red-600 font-bold">{errors.address}</span>}
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-600">City</label>
+                    <label className="text-[11px] font-bold text-slate-600">City *</label>
                     <input
                       type="text"
+                      placeholder="e.g. Bengaluru"
                       value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 outline-none focus:border-[#4385E8]"
+                      onChange={(e) => {
+                        setCity(e.target.value);
+                        if (errors.city) setErrors((prev) => ({ ...prev, city: '' }));
+                      }}
+                      className={`w-full px-3 py-2 text-xs font-medium rounded-xl border outline-none transition-all ${
+                        errors.city ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#4385E8]'
+                      }`}
                     />
+                    {errors.city && <span className="text-[10px] text-red-600 font-bold">{errors.city}</span>}
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-600">State / Region</label>
+                    <label className="text-[11px] font-bold text-slate-600">State / Region *</label>
                     <input
                       type="text"
+                      placeholder="e.g. Karnataka"
                       value={stateName}
-                      onChange={(e) => setStateName(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 outline-none focus:border-[#4385E8]"
+                      onChange={(e) => {
+                        setStateName(e.target.value);
+                        if (errors.stateName) setErrors((prev) => ({ ...prev, stateName: '' }));
+                      }}
+                      className={`w-full px-3 py-2 text-xs font-medium rounded-xl border outline-none transition-all ${
+                        errors.stateName ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#4385E8]'
+                      }`}
                     />
+                    {errors.stateName && <span className="text-[10px] text-red-600 font-bold">{errors.stateName}</span>}
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-600">Postal / ZIP</label>
+                    <label className="text-[11px] font-bold text-slate-600">Postal / ZIP *</label>
                     <input
                       type="text"
+                      placeholder="e.g. 560100"
                       value={postalCode}
-                      onChange={(e) => setPostalCode(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 outline-none focus:border-[#4385E8]"
+                      onChange={(e) => {
+                        setPostalCode(e.target.value);
+                        if (errors.postalCode) setErrors((prev) => ({ ...prev, postalCode: '' }));
+                      }}
+                      className={`w-full px-3 py-2 text-xs font-medium rounded-xl border outline-none transition-all ${
+                        errors.postalCode ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#4385E8]'
+                      }`}
                     />
+                    {errors.postalCode && <span className="text-[10px] text-red-600 font-bold">{errors.postalCode}</span>}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-600">Country</label>
+                    <label className="text-[11px] font-bold text-slate-600">Country *</label>
                     <select
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
@@ -458,7 +633,7 @@ export const BillingCheckoutModal: React.FC = () => {
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">
-                    2. Payment Method
+                    2. Payment Credentials (Mandatory)
                   </h3>
                   <div className="flex items-center gap-1.5 p-0.5 rounded-xl bg-slate-100 border border-slate-200">
                     <button
@@ -487,72 +662,98 @@ export const BillingCheckoutModal: React.FC = () => {
                 {paymentMethod === 'card' ? (
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-bold text-slate-600">Cardholder Name</label>
+                      <label className="text-[11px] font-bold text-slate-600">Cardholder Name *</label>
                       <input
                         type="text"
-                        required
+                        placeholder="Name exactly as printed on card"
                         value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        className="w-full px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 outline-none focus:border-[#4385E8] bg-white"
+                        onChange={(e) => {
+                          setCardName(e.target.value);
+                          if (errors.cardName) setErrors((prev) => ({ ...prev, cardName: '' }));
+                        }}
+                        className={`w-full px-3 py-2 text-xs font-medium rounded-xl border outline-none transition-all bg-white ${
+                          errors.cardName ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#4385E8]'
+                        }`}
                       />
+                      {errors.cardName && <span className="text-[10px] text-red-600 font-bold">{errors.cardName}</span>}
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-bold text-slate-600">Card Number</label>
+                      <label className="text-[11px] font-bold text-slate-600">Card Number (16 Digits) *</label>
                       <div className="relative">
                         <CreditCard className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input
                           type="text"
-                          required
                           value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value)}
+                          onChange={(e) => {
+                            setCardNumber(e.target.value);
+                            if (errors.cardNumber) setErrors((prev) => ({ ...prev, cardNumber: '' }));
+                          }}
                           placeholder="4532 8920 1194 8824"
-                          className="w-full pl-9 pr-14 py-2 text-xs font-mono font-medium rounded-xl border border-slate-200 outline-none focus:border-[#4385E8] bg-white"
+                          className={`w-full pl-9 pr-14 py-2 text-xs font-mono font-medium rounded-xl border outline-none transition-all bg-white ${
+                            errors.cardNumber ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#4385E8]'
+                          }`}
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#4385E8] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                           VISA
                         </span>
                       </div>
+                      {errors.cardNumber && <span className="text-[10px] text-red-600 font-bold">{errors.cardNumber}</span>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex flex-col gap-1">
-                        <label className="text-[11px] font-bold text-slate-600">Expires (MM/YY)</label>
+                        <label className="text-[11px] font-bold text-slate-600">Expires (MM/YY) *</label>
                         <input
                           type="text"
-                          required
                           placeholder="12/28"
                           value={cardExpiry}
-                          onChange={(e) => setCardExpiry(e.target.value)}
-                          className="w-full px-3 py-2 text-xs font-mono font-medium rounded-xl border border-slate-200 outline-none focus:border-[#4385E8] bg-white"
+                          onChange={(e) => {
+                            setCardExpiry(e.target.value);
+                            if (errors.cardExpiry) setErrors((prev) => ({ ...prev, cardExpiry: '' }));
+                          }}
+                          className={`w-full px-3 py-2 text-xs font-mono font-medium rounded-xl border outline-none transition-all bg-white ${
+                            errors.cardExpiry ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#4385E8]'
+                          }`}
                         />
+                        {errors.cardExpiry && <span className="text-[10px] text-red-600 font-bold">{errors.cardExpiry}</span>}
                       </div>
                       <div className="flex flex-col gap-1">
-                        <label className="text-[11px] font-bold text-slate-600">CVV / CVC</label>
+                        <label className="text-[11px] font-bold text-slate-600">CVV / CVC *</label>
                         <input
                           type="password"
-                          required
                           maxLength={4}
                           placeholder="•••"
                           value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value)}
-                          className="w-full px-3 py-2 text-xs font-mono font-medium rounded-xl border border-slate-200 outline-none focus:border-[#4385E8] bg-white"
+                          onChange={(e) => {
+                            setCardCvv(e.target.value);
+                            if (errors.cardCvv) setErrors((prev) => ({ ...prev, cardCvv: '' }));
+                          }}
+                          className={`w-full px-3 py-2 text-xs font-mono font-medium rounded-xl border outline-none transition-all bg-white ${
+                            errors.cardCvv ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#4385E8]'
+                          }`}
                         />
+                        {errors.cardCvv && <span className="text-[10px] text-red-600 font-bold">{errors.cardCvv}</span>}
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="p-4 rounded-2xl bg-purple-50/50 border border-purple-200 flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-bold text-slate-600">Virtual Payment Address (VPA / UPI ID)</label>
+                      <label className="text-[11px] font-bold text-slate-600">Virtual Payment Address (UPI ID / VPA) *</label>
                       <input
                         type="text"
-                        required
                         placeholder="yourname@okhdfcbank"
                         value={upiId}
-                        onChange={(e) => setUpiId(e.target.value)}
-                        className="w-full px-3 py-2 text-xs font-mono font-medium rounded-xl border border-slate-200 outline-none focus:border-[#8064E8] bg-white"
+                        onChange={(e) => {
+                          setUpiId(e.target.value);
+                          if (errors.upiId) setErrors((prev) => ({ ...prev, upiId: '' }));
+                        }}
+                        className={`w-full px-3 py-2 text-xs font-mono font-medium rounded-xl border outline-none transition-all bg-white ${
+                          errors.upiId ? 'border-red-400 bg-red-50/20' : 'border-slate-200 focus:border-[#8064E8]'
+                        }`}
                       />
+                      {errors.upiId && <span className="text-[10px] text-red-600 font-bold">{errors.upiId}</span>}
                     </div>
 
                     <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-purple-100">
@@ -573,13 +774,37 @@ export const BillingCheckoutModal: React.FC = () => {
                 )}
               </div>
 
+              {/* Mandatory Compliance Checkbox */}
+              <div className="flex flex-col gap-1 pt-1">
+                <div className={`flex items-start gap-2.5 p-3 rounded-2xl border transition-all ${
+                  errors.agreedToTerms ? 'border-red-400 bg-red-50/20' : 'border-slate-200 bg-slate-50'
+                }`}>
+                  <input
+                    type="checkbox"
+                    id="terms-check"
+                    checked={agreedToTerms}
+                    onChange={(e) => {
+                      setAgreedToTerms(e.target.checked);
+                      if (errors.agreedToTerms) setErrors((prev) => ({ ...prev, agreedToTerms: '' }));
+                    }}
+                    className="mt-0.5 w-4 h-4 rounded text-brand-blue accent-[#4385E8]"
+                  />
+                  <label htmlFor="terms-check" className="text-[11px] text-slate-600 leading-tight">
+                    <span className="font-bold text-slate-800">Mandatory Authorization:</span> I verify that all customer and payment data provided is genuine. I accept the Metrology Software License Agreement and authorize 256-bit SSL encrypted PCI-DSS processing.
+                  </label>
+                </div>
+                {errors.agreedToTerms && (
+                  <span className="text-[10px] text-red-600 font-bold">{errors.agreedToTerms}</span>
+                )}
+              </div>
+
               {/* Submit Button */}
               <button
                 type="submit"
                 className="w-full mt-2 py-3.5 rounded-2xl bg-gradient-to-r from-[#4385E8] via-[#6576E8] to-[#8064E8] text-white font-extrabold text-sm shadow-lg shadow-brand-blue/30 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
               >
                 <ShieldCheck className="w-4 h-4" />
-                <span>Authorize & Pay ${totalAmount.toFixed(2)} USD</span>
+                <span>Verify & Authorize Payment (${totalAmount.toFixed(2)} USD)</span>
               </button>
             </form>
           </div>

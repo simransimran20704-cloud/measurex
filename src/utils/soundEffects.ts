@@ -97,6 +97,15 @@ class SoundEffectsEngine {
       osc.stop(now + 0.05);
     } catch (e) {}
   }
+
+  // Convenient aliases
+  click() {
+    this.playRatchetClick();
+  }
+
+  snap() {
+    this.playLockSnap(true);
+  }
 }
 
 export const soundEffects = new SoundEffectsEngine();

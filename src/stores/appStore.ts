@@ -18,6 +18,14 @@ export type NavTab =
   | 'digital-compass'
   | 'digital-protractor'
   | 'digital-scale'
+  | 'thread-pitch-gauge'
+  | 'feeler-gauge'
+  | 'spirit-level'
+  | 'pcd-generator'
+  | 'limits-fits'
+  | 'material-estimator'
+  | 'spherometer'
+  | 'metrology-quiz'
   | 'subscription'
   | 'help';
 

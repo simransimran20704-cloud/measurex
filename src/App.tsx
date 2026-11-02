@@ -21,6 +21,14 @@ import { DialIndicatorView } from './modules/scientific-instruments/DialIndicato
 import { DigitalCompassView } from './modules/scientific-instruments/DigitalCompassView';
 import { DigitalProtractorView } from './modules/scientific-instruments/DigitalProtractorView';
 import { DigitalScaleView } from './modules/scientific-instruments/DigitalScaleView';
+import { ThreadPitchGaugeView } from './modules/scientific-instruments/ThreadPitchGaugeView';
+import { FeelerGaugeView } from './modules/scientific-instruments/FeelerGaugeView';
+import { SpiritLevelView } from './modules/scientific-instruments/SpiritLevelView';
+import { PcdGeneratorView } from './modules/scientific-instruments/PcdGeneratorView';
+import { LimitsFitsView } from './modules/scientific-instruments/LimitsFitsView';
+import { MaterialEstimatorView } from './modules/scientific-instruments/MaterialEstimatorView';
+import { SpherometerView } from './modules/scientific-instruments/SpherometerView';
+import { MetrologyQuizView } from './modules/scientific-instruments/MetrologyQuizView';
 import { UnitConverterView } from './modules/unit-converter/UnitConverterView';
 import { CalibrationView } from './modules/calibration/CalibrationView';
 import { ProjectsView } from './modules/projects/ProjectsView';
@@ -56,6 +64,22 @@ export const App: React.FC = () => {
         return <DigitalProtractorView />;
       case 'digital-scale':
         return <DigitalScaleView />;
+      case 'thread-pitch-gauge':
+        return <ThreadPitchGaugeView />;
+      case 'feeler-gauge':
+        return <FeelerGaugeView />;
+      case 'spirit-level':
+        return <SpiritLevelView />;
+      case 'pcd-generator':
+        return <PcdGeneratorView />;
+      case 'limits-fits':
+        return <LimitsFitsView />;
+      case 'material-estimator':
+        return <MaterialEstimatorView />;
+      case 'spherometer':
+        return <SpherometerView />;
+      case 'metrology-quiz':
+        return <MetrologyQuizView />;
       case 'unit-converter':
         return <UnitConverterView />;
       case 'calibration':
