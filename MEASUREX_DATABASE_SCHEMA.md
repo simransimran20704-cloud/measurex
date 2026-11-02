@@ -1,160 +1,230 @@
-# MEASUREX – CLOUD FIRESTORE DATABASE SCHEMA (PHASE 5)
-**Document Version:** 1.0.0  
-**Target Database:** Google Cloud Firestore (Native Mode)  
-**Security Model:** User-Isolated Subcollections + Server-Managed System Collections  
+# MEASUREX RELATIONAL DATABASE SCHEMA SPECIFICATION (CLOUDFLARE D1)
+**Document Version:** 2.0.0 (Cloudflare D1 / SQLite)  
+**Classification:** Confidential – Database Engineering  
+**Target Engine:** Cloudflare D1 Serverless SQL  
 
 ---
 
-## 1. Schema Overview
+## 1. Normalized Relational Schema DDL
 
-MeasureX structures data to guarantee **strict tenant isolation by default**. User-owned confidential assets (measurement projects, geometric vectors, instrument histories, calibration profiles) are placed under user subcollections (`/users/{userId}/**`). System-critical records (subscriptions, payment webhook idempotency ledgers, audit logs) reside in top-level collections restricted to server-side Cloud Functions execution.
+The following Data Definition Language (DDL) defines the production schema for Cloudflare D1. All foreign keys enforce referential integrity, and indices optimize query performance across edge replicas.
 
+```sql
+-- ============================================================================
+-- 1. USERS TABLE
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,                       -- e.g. 'usr_c8f2a1b9'
+    email TEXT UNIQUE NOT NULL COLLATE NOCASE, -- Case-insensitive unique email
+    password_hash TEXT NOT NULL,               -- Argon2id or PBKDF2-SHA256 hash string
+    salt TEXT NOT NULL,                        -- Cryptographic 32-byte salt (hex/base64)
+    full_name TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user', 'metrologist', 'admin')),
+    plan TEXT NOT NULL DEFAULT 'free' CHECK(plan IN ('free', 'pro', 'enterprise')),
+    is_email_verified INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- ============================================================================
+-- 2. SESSIONS TABLE (Server-Side Session Store)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,                       -- UUIDv4 session identifier
+    user_id TEXT NOT NULL,
+    session_token_hash TEXT NOT NULL UNIQUE,   -- SHA-256 hash of the cookie token
+    expires_at INTEGER NOT NULL,               -- Unix timestamp
+    ip_hash TEXT,                              -- Anonymized SHA-256 IP hash
+    user_agent TEXT,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_token_hash ON sessions(session_token_hash);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+
+-- ============================================================================
+-- 3. PASSWORD RESETS TABLE
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS password_resets (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,           -- SHA-256 hash of single-use reset token
+    expires_at INTEGER NOT NULL,               -- 15-minute expiration
+    used_at INTEGER,                           -- Null until consumed
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token_hash);
+
+-- ============================================================================
+-- 4. PROJECTS TABLE (CAD Drawings & Metrology Workspaces)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS projects (
+    id TEXT PRIMARY KEY,                       -- e.g. 'proj_9a7b6c5d'
+    user_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    type TEXT NOT NULL CHECK(type IN ('Precision Studio', 'Instruments', 'Workspace', 'Blueprint')),
+    description TEXT,
+    points_count INTEGER NOT NULL DEFAULT 0,
+    drawing_data TEXT,                         -- JSON string of vector coordinates/canvas
+    r2_blueprint_key TEXT,                     -- Key to associated blueprint in Cloudflare R2
+    is_deleted INTEGER NOT NULL DEFAULT 0,     -- Soft delete tombstone
+    deleted_at INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id, is_deleted);
+
+-- ============================================================================
+-- 5. MEASUREMENTS TABLE (Granular Instrument Logs)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS measurements (
+    id TEXT PRIMARY KEY,                       -- e.g. 'meas_4e3d2c1b'
+    user_id TEXT NOT NULL,
+    project_id TEXT,
+    tool TEXT NOT NULL,                        -- 'Vernier Caliper', 'Screw Gauge', etc.
+    title TEXT NOT NULL,
+    value TEXT NOT NULL,                       -- Formatted display string, e.g. '24.7 mm'
+    raw_numeric_value REAL NOT NULL,           -- Precision float for arithmetic analysis
+    unit TEXT NOT NULL,                        -- 'mm', 'cm', 'in', 'um', 'deg', 'g'
+    details TEXT,                              -- Scale readings, vernier divisions, zero errors
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_measurements_user ON measurements(user_id, created_at DESC);
+
+-- ============================================================================
+-- 6. CALIBRATIONS TABLE (Screen PPI & Standard Reference Standards)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS calibrations (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    device_label TEXT NOT NULL,                -- e.g. 'Dell UltraSharp 4K'
+    ppi REAL NOT NULL,                         -- Calibrated Pixels Per Inch
+    unit TEXT NOT NULL DEFAULT 'mm',
+    standard_name TEXT,                        -- 'Credit Card', '100mm Reference Bar'
+    reference_length REAL,
+    pixel_length REAL,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_calibrations_user ON calibrations(user_id);
+
+-- ============================================================================
+-- 7. SUBSCRIPTIONS TABLE (Authoritative Server-Side Entitlements)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id TEXT PRIMARY KEY,                       -- Subscription record ID
+    user_id TEXT NOT NULL UNIQUE,
+    stripe_customer_id TEXT UNIQUE,
+    stripe_subscription_id TEXT UNIQUE,
+    plan TEXT NOT NULL DEFAULT 'free' CHECK(plan IN ('free', 'pro', 'enterprise')),
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'past_due', 'canceled', 'trialing')),
+    current_period_start INTEGER,
+    current_period_end INTEGER,
+    cancel_at_period_end INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_sub ON subscriptions(stripe_subscription_id);
+
+-- ============================================================================
+-- 8. INVOICES TABLE (Legally Compliant Tax Records)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS invoices (
+    id TEXT PRIMARY KEY,                       -- e.g. 'inv_2026_00192'
+    user_id TEXT NOT NULL,
+    subscription_id TEXT,
+    invoice_number TEXT NOT NULL UNIQUE,       -- Sequential legal invoice number
+    amount_cents INTEGER NOT NULL,             -- Currency in lowest denomination ($19.00 = 1900)
+    currency TEXT NOT NULL DEFAULT 'USD',
+    billing_cycle TEXT NOT NULL CHECK(billing_cycle IN ('monthly', 'annual')),
+    customer_name TEXT NOT NULL,
+    customer_email TEXT NOT NULL,
+    customer_address TEXT NOT NULL,
+    customer_country TEXT NOT NULL,
+    gst_number TEXT,
+    pdf_r2_key TEXT,                           -- Cloudflare R2 path to generated PDF
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_invoices_user ON invoices(user_id, created_at DESC);
+
+-- ============================================================================
+-- 9. PAYMENT EVENTS TABLE (Idempotency & Replay Attack Defense)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS payment_events (
+    event_id TEXT PRIMARY KEY,                 -- Stripe event ID, e.g. 'evt_1Oxxx'
+    event_type TEXT NOT NULL,
+    payload_hash TEXT NOT NULL,                -- SHA-256 hash of payload
+    processed_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+);
+
+-- ============================================================================
+-- 10. AUDIT LOGS TABLE (Tamper-Evident Security Log)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    event_type TEXT NOT NULL,                  -- 'LOGIN_FAILED', 'IDOR_PROBE', 'PLAN_UPGRADE'
+    severity TEXT NOT NULL CHECK(severity IN ('INFO', 'WARNING', 'CRITICAL')),
+    ip_hash TEXT,
+    user_agent TEXT,
+    metadata TEXT,                             -- JSON string with contextual attributes
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_event ON audit_logs(event_type, created_at DESC);
 ```
-/users/{userId}                         <-- User profile & settings
-    /projects/{projectId}               <-- CAD drawings, shapes, canvas state
-    /measurements/{measurementId}       <-- Caliper, micrometer, scale readings
-    /calibrations/{calibrationId}       <-- Screen DPI profiles (pixels/mm)
-    /documents/{documentId}             <-- Image blueprint metadata & storage references
-/subscriptions/{subscriptionId}         <-- Server-managed subscription entitlements
-/paymentEvents/{eventId}                 <-- Idempotent payment webhook event ledger
-/auditLogs/{logId}                       <-- Immutable security and compliance log
-/publicConfiguration/{configId}         <-- Client-safe calibration & tool constants
+
+---
+
+## 2. Parameterized Query Patterns
+
+All queries are executed with bound parameters to guarantee complete immunity to SQL injection.
+
+```typescript
+// 1. Fetching user's private projects (IDOR-safe):
+const projects = await env.DB.prepare(
+  `SELECT id, title, type, description, points_count, updated_at 
+   FROM projects 
+   WHERE user_id = ? AND is_deleted = 0 
+   ORDER BY updated_at DESC`
+).bind(userId).all();
+
+// 2. Atomic Payment Webhook Processing with Idempotency Check:
+const batchResults = await env.DB.batch([
+  // Step A: Record event ID (fails if duplicate event_id already exists)
+  env.DB.prepare(
+    `INSERT INTO payment_events (event_id, event_type, payload_hash) VALUES (?, ?, ?)`
+  ).bind(event.id, event.type, payloadHash),
+
+  // Step B: Update user subscription tier
+  env.DB.prepare(
+    `UPDATE subscriptions 
+     SET plan = ?, status = 'active', updated_at = unixepoch() 
+     WHERE user_id = ?`
+  ).bind(targetPlan, userId),
+
+  // Step C: Mirror plan update on users table for fast session reads
+  env.DB.prepare(
+    `UPDATE users SET plan = ?, updated_at = unixepoch() WHERE id = ?`
+  ).bind(targetPlan, userId),
+]);
 ```
-
----
-
-## 2. Detailed Collection Specifications
-
-### 2.1 Collection: `/users/{userId}`
-Stores public profile information, role status, and privacy preferences for an authenticated user.
-
-| Field | Type | Required | Description | Constraint |
-|---|---|---|---|---|
-| `id` | `string` | Yes | Matching Firebase Auth UID | Must equal `request.auth.uid` |
-| `email` | `string` | Yes | Registered email address | Valid email format |
-| `displayName` | `string` | Yes | User's full name | Min 2, max 80 chars |
-| `role` | `string` | Yes | User role in system | `'user'`, `'engineer'`, `'lab_director'`, `'admin'` |
-| `plan` | `string` | Yes | Entitlement tier | `'free'`, `'pro'`, `'enterprise'` |
-| `subscriptionStatus`| `string` | Yes | Billing status | `'active'`, `'trialing'`, `'past_due'`, `'canceled'` |
-| `currentPeriodEnd` | `timestamp`| Yes | Subscription expiry | ISO timestamp |
-| `createdAt` | `timestamp`| Yes | Account creation date | Server timestamp |
-| `updatedAt` | `timestamp`| Yes | Profile last modified | Server timestamp |
-| `privacyConsent` | `map` | Yes | GDPR/DPDP consent flags | `{ analytics: boolean, cloudSync: boolean, exportConsent: boolean }` |
-
-> [!IMPORTANT]
-> The fields `role`, `plan`, `subscriptionStatus`, and `currentPeriodEnd` are **server-write-only**. Security rules strictly forbid client requests from updating these fields to prevent privilege escalation.
-
----
-
-### 2.2 Subcollection: `/users/{userId}/projects/{projectId}`
-Contains engineering measurement projects, geometric vectors, coordinate origin, and annotations.
-
-| Field | Type | Required | Description | Constraint |
-|---|---|---|---|---|
-| `id` | `string` | Yes | Project unique identifier | e.g. `proj_2026_x89a` |
-| `ownerId` | `string` | Yes | Matching parent `{userId}` | Must equal `request.auth.uid` |
-| `title` | `string` | Yes | Project title | Min 1, max 120 chars |
-| `type` | `string` | Yes | Workspace category | `'Precision Studio'`, `'Instruments'`, `'Workspace'` |
-| `description` | `string` | No | Engineering notes | Max 1,000 chars |
-| `shapes` | `array<map>`| Yes | Plotted geometric vectors | Lines, rectangles, circles, angles, polygons |
-| `coordinateOrigin` | `map` | Yes | Canvas origin (X, Y) | `{ x: number, y: number }` |
-| `canvasZoom` | `number` | Yes | Magnification level | Range: `0.1` to `10.0` |
-| `activeUnit` | `string` | Yes | Dimension unit | `'mm'`, `'cm'`, `'m'`, `'in'`, `'ft'` |
-| `isArchived` | `boolean`| Yes | Soft-delete status | Default: `false` |
-| `lastModified` | `timestamp`| Yes | Modification timestamp | Server timestamp |
-| `createdAt` | `timestamp`| Yes | Creation timestamp | Server timestamp |
-
----
-
-### 2.3 Subcollection: `/users/{userId}/measurements/{measurementId}`
-Stores historical measurement entries captured from digital instruments (Caliper, Micrometer, Height Gauge, DTI, Protractor, Scale).
-
-| Field | Type | Required | Description | Constraint |
-|---|---|---|---|---|
-| `id` | `string` | Yes | Measurement record ID | Unique string |
-| `ownerId` | `string` | Yes | Matching parent `{userId}` | Must equal `request.auth.uid` |
-| `tool` | `string` | Yes | Instrument type | e.g. `'Vernier Caliper'`, `'Screw Gauge'` |
-| `title` | `string` | Yes | Measurement label | Max 100 chars |
-| `value` | `string` | Yes | Formatted reading | e.g. `'24.700 mm'` |
-| `rawNumericValue` | `number` | Yes | Exact numeric scalar | Floating point |
-| `unit` | `string` | Yes | Physical unit | `'mm'`, `'in'`, `'g'`, `'°'`, `'µm'` |
-| `details` | `string` | No | Zero error, MSR, VSR breakdown | Max 500 chars |
-| `timestamp` | `timestamp`| Yes | Timestamp captured | Server timestamp |
-
----
-
-### 2.4 Subcollection: `/users/{userId}/calibrations/{calibrationId}`
-Stores hardware display calibration profiles (credit card, coin, manual DPI).
-
-| Field | Type | Required | Description | Constraint |
-|---|---|---|---|---|
-| `id` | `string` | Yes | Profile identifier | e.g. `'default'`, `'external_4k'` |
-| `ownerId` | `string` | Yes | Matching parent `{userId}` | Must equal `request.auth.uid` |
-| `name` | `string` | Yes | Display device label | Max 60 chars |
-| `pixelsPerMm` | `number` | Yes | Physical screen scale | Range: `1.0` to `50.0` |
-| `dpr` | `number` | Yes | Device Pixel Ratio | Range: `1.0` to `5.0` |
-| `method` | `string` | Yes | Calibration technique | `'credit-card'`, `'coin'`, `'manual-ruler'` |
-| `isCalibrated` | `boolean`| Yes | Calibration status | Boolean |
-| `calibratedAt` | `timestamp`| Yes | Verification date | Server timestamp |
-
----
-
-### 2.5 Collection: `/subscriptions/{subscriptionId}`
-Managed exclusively by Cloud Functions following payment gateway webhook verification.
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `id` | `string` | Yes | Gateway subscription ID (e.g. `sub_1O...`) |
-| `userId` | `string` | Yes | MeasureX user UID |
-| `customerEmail` | `string` | Yes | Billing email |
-| `plan` | `string` | Yes | `'pro'`, `'enterprise'` |
-| `status` | `string` | Yes | `'active'`, `'past_due'`, `'canceled'`, `'unpaid'` |
-| `billingCycle` | `string` | Yes | `'annual'`, `'monthly'` |
-| `amount` | `number` | Yes | Billed amount in USD |
-| `currentPeriodStart`| `timestamp`| Yes | Billing cycle start |
-| `currentPeriodEnd` | `timestamp`| Yes | Billing cycle renewal / expiry |
-| `cancelAtPeriodEnd` | `boolean`| Yes | If auto-renewal is canceled |
-| `gateway` | `string` | Yes | `'stripe'`, `'razorpay'` |
-| `createdAt` | `timestamp`| Yes | Creation timestamp |
-| `updatedAt` | `timestamp`| Yes | Last webhook update |
-
----
-
-### 2.6 Collection: `/paymentEvents/{eventId}`
-Idempotency ledger for incoming payment webhooks to protect against replay attacks and duplicate activations.
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `id` | `string` | Yes | Gateway Event ID (e.g. `evt_3M...`) |
-| `eventType` | `string` | Yes | e.g. `'customer.subscription.updated'` |
-| `gateway` | `string` | Yes | `'stripe'`, `'razorpay'` |
-| `processedAt` | `timestamp`| Yes | Processing timestamp |
-| `status` | `string` | Yes | `'processed'`, `'ignored'`, `'failed'` |
-| `error` | `string` | No | Failure details if encountered |
-
----
-
-### 2.7 Collection: `/auditLogs/{logId}`
-Append-only immutable audit trail for compliance, security investigation, and SOC 2 audits.
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `id` | `string` | Yes | Unique log entry ID |
-| `actorId` | `string` | Yes | UID of actor or `'system'` |
-| `actorEmail` | `string` | Yes | Email of actor |
-| `action` | `string` | Yes | e.g. `'AUTH_LOGIN'`, `'PROJECT_DELETED'`, `'PLAN_UPGRADE'` |
-| `resourcePath` | `string` | Yes | Targeted document path |
-| `ipHash` | `string` | Yes | One-way SHA-256 salted hash of client IP |
-| `userAgent` | `string` | Yes | Client browser / device user agent |
-| `status` | `string` | Yes | `'SUCCESS'`, `'DENIED'`, `'FAILED'` |
-| `timestamp` | `timestamp`| Yes | Exact UTC server timestamp |
-
----
-
-## 3. Indexing & Query Optimization Strategy
-
-### Composite Indexes Required:
-1. `users/{userId}/projects`: `isArchived ASC, lastModified DESC` (for fast project listing).
-2. `users/{userId}/measurements`: `tool ASC, timestamp DESC` (for filtering measurements by instrument).
-3. `subscriptions`: `userId ASC, status ASC` (for fast entitlement verification).
-4. `auditLogs`: `actorId ASC, timestamp DESC` (for compliance activity reviews).

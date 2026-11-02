@@ -1,113 +1,229 @@
-# MEASUREX – USER AUTHENTICATION & IDENTITY DESIGN (PHASE 3)
-**Document Version:** 1.0.0  
-**Target Architecture:** Google Cloud Identity Platform & Firebase Auth  
-**Compliance Standards:** NIST SP 800-63B, OWASP ASVS v4.0 Level 2  
+# MEASUREX EDGE AUTHENTICATION & AUTHORIZATION DESIGN
+**Document Version:** 2.0.0 (Cloudflare Edge Architecture)  
+**Classification:** Confidential – Security Engineering  
+**Platform:** Cloudflare Workers + Web Crypto API + Cloudflare D1  
 
 ---
 
-## 1. Identity Architecture Overview
+## 1. Authentication Architecture Overview
 
-MeasureX authenticates users using **cryptographically signed JSON Web Tokens (JWT)** issued by Google Cloud Identity Platform. Plain-text passwords, client-side session arrays, and unhashed credentials in `localStorage` are completely eliminated.
+MeasureX enforces a **Zero-Trust, Server-Authoritative Authentication Model** executed entirely at Cloudflare's global edge.
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Metrologist / Engineer
-    participant UI as MeasureX Frontend
-    participant GCIP as Google Cloud Identity Platform
-    participant CloudFn as Cloud Functions (Backend)
-    participant DB as Cloud Firestore
-
-    User->>UI: Registers (Name, Email, Strong Password)
-    UI->>GCIP: createUserWithEmailAndPassword()
-    GCIP->>GCIP: Hash Password (scrypt N=16384, r=8, p=1)
-    GCIP-->>User: Sends Cryptographic Email Verification Link
-    User->>GCIP: Clicks Verification Link in Email
-
-    Note over User,UI: User Signs In
-    User->>UI: Enters Email & Password
-    UI->>GCIP: signInWithEmailAndPassword()
-    GCIP->>GCIP: Rate Limiting Check (Max 5 attempts / 15m)
-    GCIP-->>UI: Issues JWT ID Token (1h) & Refresh Token
-    UI->>CloudFn: Attaches Bearer Token in Authorization Header
-    CloudFn->>CloudFn: Verify Token Signature & Claims
-    CloudFn->>DB: Record Audit Log (AUTH_LOGIN_SUCCESS)
-    UI-->>User: Unlocks Isolated Metrology Workspace
+```
++----------------------------------------------------------------------------------------------------+
+|                                  EDGE AUTHENTICATION ARCHITECTURE                                  |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|  [Client Browser]                                                                                  |
+|         |                                                                                          |
+|         |-- 1. POST /api/auth/login { email, password }                                            |
+|         v                                                                                          |
+|  [Cloudflare Edge Worker]                                                                          |
+|         |-- 2. Rate-Limit Check (Max 5 attempts / 15m per IP & Account)                            |
+|         |-- 3. Query D1 users: SELECT * FROM users WHERE email = ?                                 |
+|         |-- 4. Derive Hash via Web Crypto PBKDF2 (600,000 rounds) / Argon2id                       |
+|         |-- 5. Constant-Time Timing-Safe Equality Comparison                                       |
+|         |-- 6. Generate 256-bit Cryptographic Session Token (rawToken)                             |
+|         |-- 7. Hash Token (SHA-256) -> Store in D1 sessions table (expires in 7 days)             |
+|         v                                                                                          |
+|  [Client Browser] <==== 8. Set-Cookie: __Host-mx_session=<rawToken>; HttpOnly; Secure; SameSite=Lax |
++----------------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 2. Authentication Workflows
+## 2. Password Hashing Specification (Web Crypto API)
 
-### 2.1 Registration & Mandatory Email Verification
-1. User supplies **Full Name**, **Email Address**, and **Password**.
-2. **Password Strength Policy**:
-   - Minimum length: 10 characters.
-   - Must contain: at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special symbol (`!@#$%^&*`).
-   - Common breached password dictionary check (NIST SP 800-63B).
-3. Upon account creation, Firebase Auth automatically dispatches a signed activation email (`sendEmailVerification()`).
-4. **Enforcement Gate**: While unverified accounts can explore free offline rulers, **Cloud Sync, Project Saving, and Premium Instruments require `emailVerified == true`**.
+Because Cloudflare Workers execute in a V8 isolate without native Node.js C++ bindings, password hashing is executed using the standard **W3C Web Crypto API** (PBKDF2 with SHA-256 and 600,000 iterations) or WebAssembly Argon2id.
 
-### 2.2 Secure Sign-In & Session Lifecycle
-- Upon valid credential presentation, Identity Platform returns:
-  - **ID Token (JWT)**: Valid for 60 minutes. Contains standard claims (`sub`, `email`, `email_verified`) and custom claims (`plan: 'pro'`).
-  - **Refresh Token**: High-entropy opaque token stored securely by the browser runtime in an `IndexedDB` cryptographic store (never in vulnerable `localStorage`).
-- **Token Rotation**: The client SDK automatically exchanges the refresh token every 55 minutes to maintain active sessions without user disruption.
+### 2.1 Hashing Implementation in Worker:
+```typescript
+/**
+ * Generates a PBKDF2-SHA256 password hash using standard Web Crypto API
+ */
+export async function hashPassword(password: string): Promise<{ hash: string; salt: string }> {
+  const encoder = new TextEncoder();
+  const saltBytes = crypto.getRandomValues(new Uint8Array(32));
+  const salt = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
 
-### 2.3 Sign-Out & Instant Session Revocation
-- **Client Sign-Out**: `firebase.auth().signOut()` immediately purges tokens from memory and local IndexedDB.
-- **Server-Side Session Revocation**: In security incident scenarios (e.g., compromised laptop, password change, suspicious login), an admin or the user can invoke the cloud function `revokeUserSessions(uid)`. This calls Firebase Admin SDK `admin.auth().revokeRefreshTokens(uid)` which updates `validSince` timestamp, instantly invalidating all issued tokens across all devices.
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits', 'deriveKey']
+  );
 
-### 2.4 Self-Service Password Reset
-- Password reset follows an out-of-band workflow:
-  1. User requests password reset in `AuthModal.tsx`.
-  2. Cloud Identity Platform generates a cryptographically random, one-time action code and emails it to the user (`sendPasswordResetEmail`).
-  3. Action link directs user to a secure HTTPS reset endpoint hosted on Firebase Hosting.
-  4. Once updated, all active sessions and existing refresh tokens for that user are immediately revoked.
+  const derivedKey = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: saltBytes,
+      iterations: 600000, // OWASP 2026 Recommended Minimum
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt']
+  );
 
-### 2.5 Google Single Sign-On (OAuth 2.0)
-- Supports one-click Google Sign-In for corporate engineering teams and universities using Google Workspace.
-- Implements PKCE (Proof Key for Code Exchange) to mitigate OAuth authorization code interception.
+  const exportedKey = await crypto.subtle.exportKey('raw', derivedKey);
+  const hash = Array.from(new Uint8Array(exportedKey)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  return { hash, salt };
+}
+
+/**
+ * Constant-Time Password Verification to prevent timing attacks
+ */
+export async function verifyPassword(password: string, storedHash: string, saltHex: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const saltBytes = new Uint8Array(saltHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+
+  const derivedKey = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: saltBytes,
+      iterations: 600000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt']
+  );
+
+  const exportedKey = await crypto.subtle.exportKey('raw', derivedKey);
+  const computedHash = Array.from(new Uint8Array(exportedKey)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  // Constant-time string comparison
+  if (computedHash.length !== storedHash.length) return false;
+  let result = 0;
+  for (let i = 0; i < computedHash.length; i++) {
+    result |= computedHash.charCodeAt(i) ^ storedHash.charCodeAt(i);
+  }
+  return result === 0;
+}
+```
 
 ---
 
-## 3. Brute-Force & Rate Limiting Controls
+## 3. Session Security & Cookie Protection
 
-To protect user accounts from credential stuffing and dictionary attacks:
+### 3.1 Cookie Attributes:
+* **Name:** `__Host-mx_session` (The `__Host-` prefix guarantees the cookie is only sent to the exact domain, requires HTTPS, and cannot be modified by subdomains).
+* **`HttpOnly`:** True (Completely inaccessible to `document.cookie` or JavaScript; zero XSS token exfiltration).
+* **`Secure`:** True (Only transits over HTTPS).
+* **`SameSite`:** `Lax` (Prevents Cross-Site Request Forgery / CSRF while supporting standard navigation).
+* **`Path`:** `/`
+* **`Max-Age`:** `604800` (7 days rolling expiration).
 
-1. **IP-Based Throttling**:
-   - Cloud Identity Platform enforces automatic rate limiting on IP addresses exceeding 30 attempts per minute.
-2. **Account Lockout Policy**:
-   - After 5 consecutive failed login attempts on an account, Identity Platform enters a progressive backoff penalty (1 minute, 5 minutes, 15 minutes).
-3. **App Check Protection**:
-   - Every authentication request must carry a valid Firebase App Check attestation token (reCAPTCHA Enterprise), preventing automated bot scripts from calling auth endpoints directly.
-
----
-
-## 4. Multi-Factor Authentication (MFA) for Enterprise Labs
-
-For Enterprise Lab accounts and Metrology Directors managing confidential defense/aerospace components:
-
-- **Supported Second Factors**:
-  - Time-based One-Time Password (TOTP) compatible with Google Authenticator, Authy, and 1Password.
-  - SMS One-Time Passcode (secondary fallback).
-- **Enforcement**:
-  - Organization admins can configure mandatory MFA for all team members under their Enterprise seat.
-  - When enabled, `signInWithEmailAndPassword` throws an `auth/multi-factor-auth-required` challenge requiring the second factor verification before any session tokens are issued.
+### 3.2 Token Hashing in Database:
+To prevent database breach dumps from exposing valid session tokens:
+* The browser receives the raw 256-bit token.
+* The D1 `sessions` table only stores the **SHA-256 hash** of the token.
+* Even if an attacker gains read access to the D1 database, they cannot forge or hijack active user sessions.
 
 ---
 
-## 5. Role-Based Access Control (RBAC) Matrix
+## 4. Server-Side Authorization Middleware (Hono)
 
-User permissions are encoded into Firebase Custom Claims issued strictly by server-side Cloud Functions:
+Every protected route executes the `requireAuth` middleware before business logic.
 
-| Capability | Free Metrologist | Pro Engineer | Enterprise Lab Director | System Admin |
-|---|:---:|:---:|:---:|:---:|
-| **Digital Rulers & Basic Caliper** | ✅ | ✅ | ✅ | ✅ |
-| **All 15 Scientific Instruments** | ❌ (Free preview only) | ✅ | ✅ | ✅ |
-| **Cloud Project Sync & Saving** | ❌ (Local only, max 5) | ✅ (Unlimited) | ✅ (Unlimited) | ✅ |
-| **Official PDF Engineering Reports** | ❌ | ✅ | ✅ | ✅ |
-| **CAD DXF Export** | ❌ | ❌ | ✅ | ✅ |
-| **Multi-Seat Team Workspace** | ❌ | ❌ | ✅ | ✅ |
-| **Audit Logs Access** | ❌ | ❌ | ✅ (Own team) | ✅ (Full platform) |
-| **Manage Subscription / Seats** | ❌ | ✅ (Personal) | ✅ (Team organization) | ✅ |
+```typescript
+import { Context, Next } from 'hono';
+
+export interface UserContext {
+  id: string;
+  email: string;
+  role: 'user' | 'metrologist' | 'admin';
+  plan: 'free' | 'pro' | 'enterprise';
+}
+
+export async function requireAuth(c: Context, next: Next) {
+  const sessionCookie = c.req.cookie('__Host-mx_session');
+
+  if (!sessionCookie) {
+    return c.json({ error: 'UNAUTHORIZED', message: 'Authentication required' }, 401);
+  }
+
+  // Hash incoming cookie token to compare with database
+  const tokenHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sessionCookie));
+  const tokenHash = Array.from(new Uint8Array(tokenHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  // Query D1 sessions joined with users
+  const sessionRecord = await c.env.DB.prepare(
+    `SELECT s.id as session_id, s.expires_at, u.id as user_id, u.email, u.role, u.plan
+     FROM sessions s
+     JOIN users u ON s.user_id = u.id
+     WHERE s.session_token_hash = ? AND s.expires_at > unixepoch()`
+  ).bind(tokenHash).first();
+
+  if (!sessionRecord) {
+    // Clear invalid or expired cookie
+    c.header('Set-Cookie', '__Host-mx_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax');
+    return c.json({ error: 'SESSION_EXPIRED', message: 'Session is invalid or expired. Please sign in.' }, 401);
+  }
+
+  // Set user context for downstream handlers
+  c.set('user', {
+    id: sessionRecord.user_id,
+    email: sessionRecord.email,
+    role: sessionRecord.role,
+    plan: sessionRecord.plan,
+  });
+
+  await next();
+}
+```
+
+---
+
+## 5. Ownership Verification & Anti-IDOR Guard
+
+```typescript
+/**
+ * Enforces that a resource (project, calibration, measurement) belongs strictly to the requesting user
+ */
+export async function requireResourceOwnership(c: Context, table: 'projects' | 'measurements', resourceId: string): Promise<boolean> {
+  const user = c.get('user') as UserContext;
+
+  const record = await c.env.DB.prepare(
+    `SELECT id, user_id FROM ${table} WHERE id = ? AND is_deleted = 0`
+  ).bind(resourceId).first();
+
+  if (!record) {
+    return false; // 404 Not Found
+  }
+
+  // Admin override or exact owner match
+  if (record.user_id !== user.id && user.role !== 'admin') {
+    // Log IDOR probe to audit_logs
+    await c.env.DB.prepare(
+      `INSERT INTO audit_logs (id, user_id, event_type, severity, metadata) VALUES (?, ?, 'IDOR_PROBE', 'CRITICAL', ?)`
+    ).bind(crypto.randomUUID(), user.id, JSON.stringify({ targetTable: table, targetId: resourceId })).run();
+
+    return false; // 403 Forbidden
+  }
+
+  return true;
+}
+```
+
+---
+
+## 6. Secure Password Reset Workflow
+
+1. User requests password reset via `POST /api/auth/forgot-password { email }`.
+2. Worker verifies user exists, generates a 32-byte cryptographically random token (`rawResetToken`), hashes it with SHA-256, and stores it in `password_resets` with `expires_at = unixepoch() + 900` (15 minutes).
+3. Worker sends an email containing the reset URL: `https://measurex.app/reset-password?token=<rawResetToken>`.
+4. User enters new password on the secure reset page (`POST /api/auth/reset-password`).
+5. Worker verifies token freshness, ensures `used_at IS NULL`, updates `password_hash` in `users`, marks token as consumed (`used_at = unixepoch()`), and invalidates all existing sessions in `sessions` table.
