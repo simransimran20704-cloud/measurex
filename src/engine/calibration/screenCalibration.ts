@@ -31,24 +31,27 @@ const STORAGE_KEY = 'measurex_calibration_profile';
 
 export function loadSavedCalibration(): CalibrationProfile {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      // Validate devicePixelRatio hasn't drastically changed (e.g. moved from retina to external 1080p monitor)
-      const currentDpr = window.devicePixelRatio || 1;
-      return {
-        ...parsed,
-        dpr: currentDpr,
-      };
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Validate devicePixelRatio hasn't drastically changed (e.g. moved from retina to external 1080p monitor)
+        const currentDpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+        return {
+          ...parsed,
+          dpr: currentDpr,
+        };
+      }
     }
   } catch (e) {
     console.warn('Failed to load calibration profile', e);
   }
 
+  const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
   return {
     id: 'default-uncalibrated',
     name: 'Default Screen (Uncalibrated ~96 DPI)',
-    dpr: window.devicePixelRatio || 1,
+    dpr,
     pixelsPerMm: DEFAULT_PIXELS_PER_MM,
     createdAt: Date.now(),
     isCalibrated: false,
@@ -58,7 +61,9 @@ export function loadSavedCalibration(): CalibrationProfile {
 
 export function saveCalibration(profile: CalibrationProfile): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+    }
   } catch (e) {
     console.error('Failed to save calibration', e);
   }

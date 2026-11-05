@@ -248,7 +248,7 @@ export const ScrewGaugeView: React.FC = () => {
       </div>
 
       {/* Main Interactive Micrometer SVG Stage */}
-      <div className="relative w-full overflow-x-auto p-8 rounded-3xl bg-gradient-to-b from-white/95 to-[#F1F5FB] border border-white shadow-xl flex flex-col items-center justify-center min-h-[420px]">
+      <div className="relative w-full overflow-x-auto p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-white/95 to-[#F1F5FB] border border-white shadow-xl flex flex-col items-center justify-center min-h-[360px] sm:min-h-[420px]">
         {/* SVG Drawing */}
         <div className="relative w-[860px] h-[300px]">
           <svg viewBox="0 0 860 300" className="w-full h-full filter drop-shadow-lg">
@@ -423,7 +423,7 @@ export const ScrewGaugeView: React.FC = () => {
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
-              className="cursor-ns-resize group"
+              className="cursor-ns-resize group touch-none"
             >
               {/* Beveled Collar Edge */}
               <path
@@ -508,7 +508,30 @@ export const ScrewGaugeView: React.FC = () => {
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-4">
+        {/* Fine Adjustment Touch Slider for mobile/precision */}
+        <div className="w-full max-w-md flex items-center gap-3 px-4 py-2 mt-4 bg-white/90 rounded-2xl border border-slate-200 shadow-sm">
+          <span className="text-xs text-slate-500 font-semibold whitespace-nowrap">Spindle (0-25mm):</span>
+          <input
+            type="range"
+            min="0"
+            max="25"
+            step="0.01"
+            value={spindlePositionMm}
+            disabled={isLocked}
+            onChange={(e) => {
+              if (isLocked) return;
+              setSpindlePositionMm(Number(e.target.value));
+              soundEffects.playSliderTick();
+            }}
+            className="w-full accent-[#8064E8]"
+            aria-label="Fine spindle position slider"
+          />
+          <span className="font-mono text-xs font-bold text-slate-700 w-16 text-right">
+            {spindlePositionMm.toFixed(2)}mm
+          </span>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
           <button
             onClick={handleRatchetClick}
             className="px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-semibold hover:bg-slate-700 flex items-center gap-2 shadow-sm transition-all"

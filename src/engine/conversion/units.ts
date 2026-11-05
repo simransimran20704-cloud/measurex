@@ -77,6 +77,72 @@ export const UNITS: Record<UnitCategory, UnitDefinition[]> = {
   ],
 };
 
+// Dedicated Temperature Conversions (Thermodynamic Affine Equations)
+export function celsiusToFahrenheit(c: number): number {
+  return (c * 9) / 5 + 32;
+}
+
+export function fahrenheitToCelsius(f: number): number {
+  return ((f - 32) * 5) / 9;
+}
+
+export function celsiusToKelvin(c: number): number {
+  return c + 273.15;
+}
+
+export function kelvinToCelsius(k: number): number {
+  return k - 273.15;
+}
+
+export function fahrenheitToKelvin(f: number): number {
+  return ((f - 32) * 5) / 9 + 273.15;
+}
+
+export function kelvinToFahrenheit(k: number): number {
+  return ((k - 273.15) * 9) / 5 + 32;
+}
+
+export function normalizeTemperatureUnit(unit: string): '°C' | '°F' | 'K' | null {
+  if (!unit) return null;
+  const cleaned = unit.trim().toLowerCase().replace(/[\s_\-]+/g, '');
+  if (cleaned === '°c' || cleaned === 'c' || cleaned === 'celsius' || cleaned === 'degc') {
+    return '°C';
+  }
+  if (cleaned === '°f' || cleaned === 'f' || cleaned === 'fahrenheit' || cleaned === 'degf') {
+    return '°F';
+  }
+  if (cleaned === 'k' || cleaned === 'kelvin') {
+    return 'K';
+  }
+  return null;
+}
+
+export function convertTemperature(value: number, fromUnit: string, toUnit: string): number {
+  if (isNaN(value)) return 0;
+  const from = normalizeTemperatureUnit(fromUnit);
+  const to = normalizeTemperatureUnit(toUnit);
+  if (!from || !to) return value;
+  if (from === to) return value;
+
+  let converted = value;
+  if (from === '°C' && to === '°F') {
+    converted = celsiusToFahrenheit(value);
+  } else if (from === '°F' && to === '°C') {
+    converted = fahrenheitToCelsius(value);
+  } else if (from === '°C' && to === 'K') {
+    converted = celsiusToKelvin(value);
+  } else if (from === 'K' && to === '°C') {
+    converted = kelvinToCelsius(value);
+  } else if (from === '°F' && to === 'K') {
+    converted = fahrenheitToKelvin(value);
+  } else if (from === 'K' && to === '°F') {
+    converted = kelvinToFahrenheit(value);
+  }
+
+  // Eliminate floating point artifacts
+  return Math.round(converted * 1e6) / 1e6;
+}
+
 export function convertValue(
   value: number,
   fromUnitId: string,
@@ -85,10 +151,21 @@ export function convertValue(
 ): number {
   if (isNaN(value)) return 0;
   if (fromUnitId === toUnitId) return value;
-  
+
+  // Dedicated temperature pipeline ensuring temperature is never processed using multiplicative ratios
+  if (category === 'temperature') {
+    const fromTemp = normalizeTemperatureUnit(fromUnitId);
+    const toTemp = normalizeTemperatureUnit(toUnitId);
+    if (fromTemp && toTemp) {
+      return convertTemperature(value, fromTemp, toTemp);
+    }
+  }
+
   const unitList = UNITS[category];
-  const fromUnit = unitList.find((u) => u.id === fromUnitId);
-  const toUnit = unitList.find((u) => u.id === toUnitId);
+  if (!unitList) return value;
+
+  const fromUnit = unitList.find((u) => u.id === fromUnitId || u.symbol.toLowerCase() === fromUnitId.toLowerCase());
+  const toUnit = unitList.find((u) => u.id === toUnitId || u.symbol.toLowerCase() === toUnitId.toLowerCase());
 
   if (!fromUnit || !toUnit) return value;
 

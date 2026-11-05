@@ -161,9 +161,9 @@ export const QuickMeasureView: React.FC = () => {
       )}
 
       {/* Top Controls Bar */}
-      <div className="p-4 rounded-2xl bg-white/80 border border-[#DCE5F2] shadow-sm flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="p-3 sm:p-4 rounded-2xl bg-white/80 border border-[#DCE5F2] shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 backdrop-blur-xl">
         {/* Left: Orientation & Units */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2.5 sm:gap-3">
           <div className="flex rounded-xl bg-slate-100 p-1">
             <button
               onClick={() => setOrientation('horizontal')}
@@ -183,7 +183,7 @@ export const QuickMeasureView: React.FC = () => {
             </button>
           </div>
 
-          <div className="h-6 w-px bg-slate-200" />
+          <div className="hidden sm:block h-6 w-px bg-slate-200" />
 
           {/* Unit Selector */}
           <div className="flex items-center gap-1.5">
@@ -203,27 +203,27 @@ export const QuickMeasureView: React.FC = () => {
         </div>
 
         {/* Center: Live Measurement Readout */}
-        <div className="flex items-center gap-3 px-4 py-1.5 rounded-xl bg-[#EEF3FF] border border-[#DCE5F2]">
+        <div className="flex items-center justify-between sm:justify-center gap-2 sm:gap-3 px-3.5 sm:px-4 py-1.5 rounded-xl bg-[#EEF3FF] border border-[#DCE5F2]">
           <span className="text-xs text-[#66758D] font-medium">Measurement:</span>
-          <span className="text-lg font-mono font-extrabold text-[#4385E8]">
+          <span className="text-base sm:text-lg font-mono font-extrabold text-[#4385E8]">
             {measuredVal.toFixed(2)} <span className="text-xs font-sans">{unit}</span>
           </span>
-          <span className="text-xs text-[#8E9CAE] font-mono">({measuredMm.toFixed(1)} mm)</span>
+          <span className="text-[11px] sm:text-xs text-[#8E9CAE] font-mono">({measuredMm.toFixed(1)} mm)</span>
           <button
             onClick={handleCopy}
             title="Copy measurement"
-            className="p-1 rounded-lg hover:bg-white text-[#4385E8] transition-colors"
+            className="p-1.5 rounded-lg hover:bg-white text-[#4385E8] transition-colors"
           >
             <Copy className="w-4 h-4" />
           </button>
         </div>
 
         {/* Right: Zoom & Reset */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
             <button
               onClick={() => setZoom((prev) => Math.max(0.5, prev - 0.1))}
-              className="p-1 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-white transition-colors"
+              className="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-white transition-colors"
             >
               <Minus className="w-3.5 h-3.5" />
             </button>
@@ -232,7 +232,7 @@ export const QuickMeasureView: React.FC = () => {
             </span>
             <button
               onClick={() => setZoom((prev) => Math.min(2.5, prev + 0.1))}
-              className="p-1 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-white transition-colors"
+              className="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-white transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
@@ -253,13 +253,13 @@ export const QuickMeasureView: React.FC = () => {
       </div>
 
       {/* Interactive Ruler Board */}
-      <div className="relative w-full overflow-x-auto p-8 rounded-3xl bg-white/90 border border-white shadow-glass backdrop-blur-xl flex flex-col items-center justify-center min-h-[380px]">
+      <div className="relative w-full overflow-x-auto p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-white/90 border border-white shadow-glass backdrop-blur-xl flex flex-col items-center justify-center min-h-[340px] sm:min-h-[380px]">
         <div
           ref={containerRef}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           style={{ width: `${totalPixels + 60}px` }}
-          className="relative h-44 rounded-2xl bg-gradient-to-b from-[#FBFDFF] to-[#EDF2FA] border-2 border-[#DCE5F2] shadow-lg overflow-hidden select-none"
+          className="relative h-44 rounded-2xl bg-gradient-to-b from-[#FBFDFF] to-[#EDF2FA] border-2 border-[#DCE5F2] shadow-lg overflow-hidden select-none touch-none"
         >
           {/* Subtle Acrylic Edge Reflection */}
           <div className="absolute top-0 inset-x-0 h-1 bg-white opacity-80" />
@@ -273,7 +273,7 @@ export const QuickMeasureView: React.FC = () => {
           <div
             style={{ left: `${markerStartPx}px` }}
             onPointerDown={handlePointerDown('start')}
-            className="absolute top-0 bottom-0 w-8 -ml-4 flex flex-col items-center justify-between cursor-ew-resize group z-20"
+            className="absolute top-0 bottom-0 w-10 -ml-5 flex flex-col items-center justify-between cursor-ew-resize group z-20 touch-none"
           >
             <div className="w-6 h-6 rounded-full bg-[#4385E8] text-white text-[10px] font-bold flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
               A
@@ -286,7 +286,7 @@ export const QuickMeasureView: React.FC = () => {
           <div
             style={{ left: `${markerEndPx}px` }}
             onPointerDown={handlePointerDown('end')}
-            className="absolute top-0 bottom-0 w-8 -ml-4 flex flex-col items-center justify-between cursor-ew-resize group z-20"
+            className="absolute top-0 bottom-0 w-10 -ml-5 flex flex-col items-center justify-between cursor-ew-resize group z-20 touch-none"
           >
             <div className="w-6 h-6 rounded-full bg-[#8064E8] text-white text-[10px] font-bold flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
               B
@@ -309,7 +309,7 @@ export const QuickMeasureView: React.FC = () => {
           </div>
         </div>
 
-        <p className="mt-6 text-xs text-[#8E9CAE] font-medium text-center">
+        <p className="mt-5 text-xs text-[#8E9CAE] font-medium text-center">
           💡 Drag markers <span className="font-bold text-[#4385E8]">A</span> and <span className="font-bold text-[#8064E8]">B</span> to measure any physical object placed directly against your screen.
         </p>
       </div>

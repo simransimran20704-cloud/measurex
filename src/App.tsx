@@ -1,13 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAppStore } from './stores/appStore';
+import { useAuthStore } from './stores/authStore';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { FooterStatus } from './components/layout/FooterStatus';
 import { Toast } from './components/common/Toast';
 import { CalibrationModal } from './modules/calibration/CalibrationModal';
 import { AuthModal } from './components/auth/AuthModal';
-import { SubscriptionModal } from './modules/subscription/SubscriptionModal';
-import { BillingCheckoutModal } from './modules/subscription/BillingCheckoutModal';
 
 // Views
 import { DashboardView } from './modules/dashboard/DashboardView';
@@ -39,6 +38,11 @@ import { HelpGuideView } from './modules/help/HelpGuideView';
 
 export const App: React.FC = () => {
   const { activeTab } = useAppStore();
+  const { checkSession } = useAuthStore();
+
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
 
   const renderActiveView = () => {
     switch (activeTab) {
@@ -102,19 +106,19 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen flex bg-[#F8FAFF] text-[#1D2940] font-sans antialiased selection:bg-brand-blue/20 selection:text-brand-blue relative overflow-x-hidden">
       {/* Aurora Ambient Glow Effects in Background */}
-      <div className="fixed top-0 left-64 w-[600px] h-[500px] bg-gradient-to-br from-[#4385E8]/10 via-[#8064E8]/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="fixed bottom-0 right-0 w-[500px] h-[400px] bg-gradient-to-tl from-[#36C6DA]/10 via-[#8064E8]/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="fixed top-0 left-0 lg:left-64 w-[600px] max-w-full h-[500px] bg-gradient-to-br from-[#4385E8]/10 via-[#8064E8]/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="fixed bottom-0 right-0 w-[500px] max-w-full h-[400px] bg-gradient-to-tl from-[#36C6DA]/10 via-[#8064E8]/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
 
       {/* Left Sidebar */}
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto overflow-x-hidden">
         {/* Sticky Header */}
         <Header />
 
         {/* Dynamic Page View */}
-        <main className="flex-1 p-6 md:p-8">
+        <main className="flex-1 p-3 sm:p-5 md:p-6 lg:p-8 max-w-full overflow-x-hidden">
           {renderActiveView()}
         </main>
 
@@ -125,8 +129,6 @@ export const App: React.FC = () => {
       {/* Global Modals & Notifications */}
       <CalibrationModal />
       <AuthModal />
-      <SubscriptionModal />
-      <BillingCheckoutModal />
       <Toast />
     </div>
   );

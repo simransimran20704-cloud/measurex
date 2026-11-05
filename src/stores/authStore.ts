@@ -36,6 +36,7 @@ export interface InvoiceRecord {
 interface AuthState {
   user: UserProfile | null;
   isAuthenticated: boolean;
+  isAuthInitialized: boolean;
   isAuthModalOpen: boolean;
   authModalMode: 'login' | 'signup';
   authPromptReason: string | null;
@@ -47,6 +48,7 @@ interface AuthState {
   lastInvoice: InvoiceRecord | null;
 
   // Actions
+  checkSession: () => Promise<boolean>;
   openAuthModal: (mode?: 'login' | 'signup', reason?: string) => void;
   closeAuthModal: () => void;
   openSubscriptionModal: () => void;
@@ -125,36 +127,102 @@ export const useAuthStore = create<AuthState>((set, get) => {
   // Ensure DB is initialized
   getUsersDb();
 
-  // Try loading existing user session
-  let savedUser: UserProfile | null = null;
-  try {
-    const raw = localStorage.getItem(STORAGE_SESSION_KEY);
-    if (raw) {
-      savedUser = JSON.parse(raw);
-    }
-  } catch (e) {}
-
-  // If no saved user, default to demo logged-in user so the experience is immediately seamless
-  const initialUser: UserProfile = savedUser || {
-    id: 'usr-simran',
-    name: 'Simran Sharma',
-    email: 'simran.sharma@measurex.io',
-    role: 'Lead Instrumentation Engineer',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=120',
-    plan: 'pro',
-    joinedDate: Date.now() - 30 * 86400 * 1000,
-  };
-
   return {
-    user: initialUser,
-    isAuthenticated: true,
+    // 1. DEFAULT STATE: ALWAYS GUEST / LOGGED OUT
+    user: null,
+    isAuthenticated: false,
+    isAuthInitialized: false,
     isAuthModalOpen: false,
     authModalMode: 'login',
     authPromptReason: null,
     isSubscriptionModalOpen: false,
     isBillingModalOpen: false,
-    billingPlan: 'pro',
+    billingPlan: 'free',
     lastInvoice: null,
+
+    // Secure Session Validation with Cloudflare Edge Backend
+    checkSession: async () => {
+      // If server-side or no window, remain guest
+      if (typeof window === 'undefined') {
+        set({ user: null, isAuthenticated: false, isAuthInitialized: true });
+        return false;
+      }
+
+      // Check backend session securely via /api/auth/me (verifies HttpOnly cookie with D1)
+      try {
+        const res = await apiClient.auth.me();
+        if (res && res.authenticated && res.user) {
+          const verifiedProfile: UserProfile = {
+            id: res.user.id,
+            name: res.user.name,
+            email: res.user.email,
+            role: res.user.role || 'Verified Metrologist',
+            avatar: (res.user as any).avatar || 'https://images.unsplash.com/photo-1534528741775?auto=format&fit=crop&q=80&w=120',
+            plan: (res.user.plan as SubscriptionPlan) || 'free',
+            joinedDate: (res.user as any).joinedDate || Date.now(),
+          };
+
+          try {
+            localStorage.setItem(
+              STORAGE_SESSION_KEY,
+              JSON.stringify({ ...verifiedProfile, manuallyLoggedIn: true })
+            );
+          } catch (e) {}
+
+          set({
+            user: verifiedProfile,
+            isAuthenticated: true,
+            isAuthInitialized: true,
+          });
+          return true;
+        }
+      } catch (err: any) {
+        // If the backend returns 401 or 403: session is missing, expired, or revoked
+        if (err?.status === 401 || err?.status === 403) {
+          try {
+            localStorage.removeItem(STORAGE_SESSION_KEY);
+          } catch (e) {}
+          set({
+            user: null,
+            isAuthenticated: false,
+            isAuthInitialized: true,
+          });
+          return false;
+        }
+      }
+
+      // If backend is unreachable or local development without edge functions:
+      // Check if a genuine manual session exists in localStorage
+      try {
+        const raw = localStorage.getItem(STORAGE_SESSION_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // Purge legacy auto-login fake demo accounts
+          if (!parsed || !parsed.manuallyLoggedIn || parsed.id === 'usr-simran') {
+            localStorage.removeItem(STORAGE_SESSION_KEY);
+          } else if (parsed && parsed.id && parsed.email && parsed.manuallyLoggedIn) {
+            set({
+              user: parsed,
+              isAuthenticated: true,
+              isAuthInitialized: true,
+            });
+            return true;
+          }
+        }
+      } catch (e) {
+        try {
+          localStorage.removeItem(STORAGE_SESSION_KEY);
+        } catch (e2) {}
+      }
+
+      // Enforce Guest state
+      set({
+        user: null,
+        isAuthenticated: false,
+        isAuthInitialized: true,
+      });
+      return false;
+    },
 
     openAuthModal: (mode = 'login', reason) =>
       set({
@@ -169,7 +237,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
         authPromptReason: null,
       }),
 
-    openSubscriptionModal: () => set({ isSubscriptionModalOpen: true }),
+    openSubscriptionModal: () => {},
     closeSubscriptionModal: () => set({ isSubscriptionModalOpen: false }),
 
     openBillingModal: (plan: SubscriptionPlan) =>
@@ -213,7 +281,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
       };
 
       try {
-        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(profile));
+        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify({ ...profile, manuallyLoggedIn: true }));
       } catch (e) {}
 
       // Sync with server-side Cloudflare Worker if online
@@ -249,7 +317,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
       };
 
       try {
-        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(profile));
+        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify({ ...profile, manuallyLoggedIn: true }));
       } catch (e) {}
 
       // Sync with server-side Cloudflare Worker if online
@@ -330,7 +398,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
       try {
         localStorage.removeItem(STORAGE_SESSION_KEY);
       } catch (e) {}
-      set({ user: null, isAuthenticated: false });
+      set({ user: null, isAuthenticated: false, isAuthInitialized: true });
     },
 
     upgradePlan: (plan: SubscriptionPlan, invoice?: InvoiceRecord) => {

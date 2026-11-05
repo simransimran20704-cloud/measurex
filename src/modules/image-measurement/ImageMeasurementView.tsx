@@ -28,8 +28,11 @@ interface BlueprintLine {
   isReference?: boolean;
 }
 
-// Built-in sample blueprint for instant zero-friction testing
-const SAMPLE_BLUEPRINT = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" fill="%230F172A"><rect width="800" height="500" fill="%230F172A"/><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="%231E293B" stroke-width="1"/></pattern></defs><rect width="800" height="500" fill="url(%23grid)"/><g stroke="%2338BDF8" stroke-width="2" fill="none"><rect x="180" y="140" width="440" height="220" rx="10"/><circle cx="260" cy="250" r="45"/><circle cx="540" cy="250" r="45"/><line x1="260" y1="250" x2="540" y2="250" stroke-dasharray="6 4" stroke="%2394A3B8"/></g><g fill="%2394A3B8" font-family="monospace" font-size="12"><text x="200" y="110">ENGINEERING SPECIMEN BLUEPRINT #MX-2026</text><text x="200" y="390">SCALE BAR: [ 100 mm REFERENCE ]</text><line x1="200" y1="410" x2="400" y2="410" stroke="%23F59E0B" stroke-width="4"/><line x1="200" y1="400" x2="200" y2="420" stroke="%23F59E0B" stroke-width="2"/><line x1="400" y1="400" x2="400" y2="420" stroke="%23F59E0B" stroke-width="2"/></g></svg>';
+// Built-in sample blueprint for instant zero-friction testing (Base64 encoded to guarantee universal browser rendering)
+const RAW_SAMPLE_BLUEPRINT_BASE64 =
+  'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNTAwIiB2aWV3Qm94PSIwIDAgODAwIDUwMCI+CiAgPHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9IiMwRjE3MkEiLz4KICA8ZGVmcz4KICAgIDxwYXR0ZXJuIGlkPSJzYW1wbGUtYmx1ZXByaW50LWdyaWQiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxwYXRoIGQ9Ik0gMjAgMCBMIDAgMCAwIDIwIiBmaWxsPSJub25lIiBzdHJva2U9IiMxRTI5M0IiIHN0cm9rZS13aWR0aD0iMSIvPgogICAgPC9wYXR0ZXJuPgogIDwvZGVmcz4KICA8cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0idXJsKCNzYW1wbGUtYmx1ZXByaW50LWdyaWQpIi8+CiAgPGcgc3Ryb2tlPSIjMzhCREY4IiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiPgogICAgPHJlY3QgeD0iMTgwIiB5PSIxNDAiIHdpZHRoPSI0NDAiIGhlaWdodD0iMjIwIiByeD0iMTAiLz4KICAgIDxjaXJjbGUgY3g9IjI2MCIgY3k9IjI1MCIgcj0iNDUiLz4KICAgIDxjaXJjbGUgY3g9IjU0MCIgY3k9IjI1MCIgcj0iNDUiLz4KICAgIDxsaW5lIHgxPSIyNjAiIHkxPSIyNTAiIHgyPSI1NDAiIHkyPSIyNTAiIHN0cm9rZS1kYXNoYXJyYXk9IjYgNCIgc3Ryb2tlPSIjOTRBM0I4Ii8+CiAgPC9nPgogIDxnIGZpbGw9IiM5NEEzQjgiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTIiPgogICAgPHRleHQgeD0iMjAwIiB5PSIxMTAiPkVOR0lORUVSSU5HIFNQRUNJTUVOIEJMVUVQUklOVCAtIE1YLTIwMjY8L3RleHQ+CiAgICA8dGV4dCB4PSIyMDAiIHk9IjM5MCI+U0NBTEUgQkFSOiBbIDEwMCBtbSBSRUZFUkVOQ0UgXTwvdGV4dD4KICAgIDxsaW5lIHgxPSIyMDAiIHkxPSI0MTAiIHgyPSI0MDAiIHkyPSI0MTAiIHN0cm9rZT0iI0Y1OUUwQiIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgICA8bGluZSB4MT0iMjAwIiB5MT0iNDAwIiB4Mj0iMjAwIiB5Mj0iNDIwIiBzdHJva2U9IiNGNTlFMEIiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPGxpbmUgeDE9IjQwMCIgeTE9IjQwMCIgeDI9IjQwMCIgeTI9IjQyMCIgc3Ryb2tlPSIjRjU5RTBCIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8L2c+Cjwvc3ZnPg==';
+
+const SAMPLE_BLUEPRINT = `data:image/svg+xml;base64,${RAW_SAMPLE_BLUEPRINT_BASE64}`;
 
 export const ImageMeasurementView: React.FC = () => {
   const { addItem } = useHistoryStore();
@@ -80,7 +83,15 @@ export const ImageMeasurementView: React.FC = () => {
           return;
         }
 
-        setImageSrc(svgContent.startsWith('data:') ? svgContent : `data:image/svg+xml;utf8,${encodeURIComponent(svgContent)}`);
+        let formattedSrc = svgContent;
+        if (!svgContent.startsWith('data:')) {
+          try {
+            formattedSrc = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgContent)))}`;
+          } catch (e) {
+            formattedSrc = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
+          }
+        }
+        setImageSrc(formattedSrc);
         setLines([]);
         setScalePixelsPerMm(null);
         setToolMode('calibrate');
@@ -174,7 +185,7 @@ export const ImageMeasurementView: React.FC = () => {
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-6 pb-12 select-none">
       {/* Top Banner */}
-      <div className="p-8 rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-2 rounded-xl bg-blue-100 text-[#4385E8]">
@@ -188,16 +199,37 @@ export const ImageMeasurementView: React.FC = () => {
         </div>
 
         {/* Upload Action */}
-        <label className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white font-bold text-xs shadow-md shadow-brand-blue/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer">
-          <Upload className="w-4 h-4" />
-          <span>Upload Blueprint / Photo</span>
-          <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/svg+xml"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-        </label>
+        <div className="flex items-center gap-2 flex-wrap">
+          {imageSrc !== SAMPLE_BLUEPRINT && (
+            <button
+              onClick={() => {
+                setImageSrc(SAMPLE_BLUEPRINT);
+                setLines([
+                  { id: 'ref-1', x1: 200, y1: 410, x2: 400, y2: 410, label: 'Reference (100.0 mm)', isReference: true },
+                  { id: 'meas-1', x1: 180, y1: 140, x2: 620, y2: 140, label: 'Length: 220.0 mm' },
+                ]);
+                setScalePixelsPerMm(2.0);
+                setToolMode('measure');
+                showToast('Sample blueprint restored.', 'info');
+              }}
+              className="px-3.5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition-all flex items-center gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Sample Specimen</span>
+            </button>
+          )}
+
+          <label className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white font-bold text-xs shadow-md shadow-brand-blue/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer">
+            <Upload className="w-4 h-4" />
+            <span>Upload Blueprint / Photo</span>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </label>
+        </div>
       </div>
 
       {/* Controls Bar */}
@@ -270,13 +302,46 @@ export const ImageMeasurementView: React.FC = () => {
       </div>
 
       {/* Main Measurement Canvas with Image Background */}
-      <div className="relative w-full rounded-3xl bg-slate-900 border border-[#DCE5F2] shadow-2xl overflow-hidden flex items-center justify-center min-h-[500px]">
+      <div className="relative w-full rounded-2xl sm:rounded-3xl bg-slate-900 border border-[#DCE5F2] shadow-2xl overflow-hidden flex items-center justify-center min-h-[300px] sm:min-h-[420px] lg:min-h-[500px]">
         {/* Background Image / Blueprint */}
-        <img
-          src={imageSrc}
-          alt="Measurement target"
-          className="w-full h-auto max-h-[700px] object-contain pointer-events-none select-none"
-        />
+        {imageSrc === SAMPLE_BLUEPRINT ? (
+          <svg
+            viewBox="0 0 800 500"
+            className="w-full h-auto max-h-[700px] object-contain pointer-events-none select-none"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <rect width="800" height="500" fill="#0F172A" />
+            <defs>
+              <pattern id="sample-blueprint-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1E293B" strokeWidth="1" />
+              </pattern>
+            </defs>
+            <rect width="800" height="500" fill="url(#sample-blueprint-grid)" />
+            <g stroke="#38BDF8" strokeWidth="2" fill="none">
+              <rect x="180" y="140" width="440" height="220" rx="10" />
+              <circle cx="260" cy="250" r="45" />
+              <circle cx="540" cy="250" r="45" />
+              <line x1="260" y1="250" x2="540" y2="250" strokeDasharray="6 4" stroke="#94A3B8" />
+            </g>
+            <g fill="#94A3B8" fontFamily="monospace" fontSize="12">
+              <text x="200" y="110">ENGINEERING SPECIMEN BLUEPRINT - MX-2026</text>
+              <text x="200" y="390">SCALE BAR: [ 100 mm REFERENCE ]</text>
+              <line x1="200" y1="410" x2="400" y2="410" stroke="#F59E0B" strokeWidth="4" />
+              <line x1="200" y1="400" x2="200" y2="420" stroke="#F59E0B" strokeWidth="2" />
+              <line x1="400" y1="400" x2="400" y2="420" stroke="#F59E0B" strokeWidth="2" />
+            </g>
+          </svg>
+        ) : (
+          <img
+            src={imageSrc}
+            alt="Measurement target"
+            className="w-full h-auto max-h-[700px] object-contain pointer-events-none select-none"
+            onError={() => {
+              setImageSrc(SAMPLE_BLUEPRINT);
+              showToast('Image could not be rendered. Restored standard blueprint specimen.', 'warning');
+            }}
+          />
+        )}
 
         {/* Interactive Measurement SVG Overlay */}
         <svg
@@ -284,7 +349,7 @@ export const ImageMeasurementView: React.FC = () => {
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          className="absolute inset-0 w-full h-full cursor-crosshair"
+          className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
         >
           {/* Committed Lines */}
           {lines.map((line) => {

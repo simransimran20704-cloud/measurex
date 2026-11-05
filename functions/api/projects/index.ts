@@ -37,24 +37,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       return jsonResponse({ error: 'INVALID_TITLE', message: 'Project title is required' }, 400);
     }
 
-    // Enforce Plan Limits
-    if (session.plan === 'free') {
-      const countRow = await env.DB.prepare(
-        `SELECT COUNT(*) as count FROM projects WHERE user_id = ? AND is_deleted = 0`
-      )
-        .bind(session.userId)
-        .first();
-
-      if ((countRow?.count || 0) >= 3) {
-        return jsonResponse(
-          {
-            error: 'QUOTA_EXCEEDED',
-            message: 'Free tier limit reached (3 projects maximum). Upgrade to Engineering Pro for unlimited workspaces.',
-          },
-          403
-        );
-      }
-    }
+    // MeasureX is free: Unlimited projects permitted for all authenticated users
 
     const projectId = `proj_${crypto.randomUUID().slice(0, 12)}`;
     const now = Math.floor(Date.now() / 1000);

@@ -22,6 +22,12 @@ describe('MeasureX Authentication & Password System', () => {
     localStorageMock.clear();
   });
 
+  it('starts fresh session in logged-out state with null user', () => {
+    useAuthStore.getState().logout();
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(useAuthStore.getState().user).toBeNull();
+  });
+
   it('authenticates seed user with correct password', () => {
     const auth = useAuthStore.getState();
     const result = auth.login('simran.sharma@measurex.io', 'MeasureX@2026');

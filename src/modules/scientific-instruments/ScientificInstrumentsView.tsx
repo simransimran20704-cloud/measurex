@@ -184,7 +184,7 @@ export const ScientificInstrumentsView: React.FC = () => {
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-6 pb-12 select-none">
       {/* Header */}
-      <div className="p-8 rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-2 rounded-xl bg-purple-100 text-[#8064E8]">
@@ -199,7 +199,7 @@ export const ScientificInstrumentsView: React.FC = () => {
       </div>
 
       {/* Interactive Mini-Instruments Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* 1. Digital Protractor Simulator */}
         <div className="p-6 rounded-3xl bg-white border border-[#DCE5F2] shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
@@ -321,7 +321,7 @@ export const ScientificInstrumentsView: React.FC = () => {
 
       {/* Main Instruments Grid */}
       <h2 className="text-lg font-bold text-[#1D2940] mt-4">Instrument Library</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {instruments.map((inst) => {
           const Icon = inst.icon;
           const isUpcoming = inst.status === 'Upcoming';

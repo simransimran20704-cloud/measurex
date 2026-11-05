@@ -2,15 +2,15 @@ import React from 'react';
 
 export const HeroVisual: React.FC = () => {
   return (
-    <div className="relative w-full h-[360px] lg:h-[390px] flex items-center justify-center select-none overflow-visible">
+    <div className="relative w-full h-[280px] sm:h-[340px] lg:h-[390px] flex items-center justify-center select-none overflow-hidden sm:overflow-visible">
       {/* Background Aurora Glows & Rings */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         {/* Soft Radial Ambient Lights */}
-        <div className="absolute w-80 h-80 rounded-full bg-gradient-to-tr from-[#36C6DA]/20 via-[#4385E8]/20 to-[#8064E8]/20 blur-3xl animate-pulse-slow" />
-        <div className="absolute w-64 h-64 rounded-full bg-[#8064E8]/15 blur-2xl translate-x-12 -translate-y-8" />
+        <div className="absolute w-64 sm:w-80 h-64 sm:h-80 rounded-full bg-gradient-to-tr from-[#36C6DA]/20 via-[#4385E8]/20 to-[#8064E8]/20 blur-3xl animate-pulse-slow" />
+        <div className="absolute w-48 sm:w-64 h-48 sm:h-64 rounded-full bg-[#8064E8]/15 blur-2xl translate-x-12 -translate-y-8" />
         
         {/* Luminous Orbital Rings */}
-        <svg className="absolute w-[460px] h-[340px] opacity-70" viewBox="0 0 460 340" fill="none">
+        <svg className="absolute w-[320px] sm:w-[420px] lg:w-[460px] h-auto max-w-full opacity-70" viewBox="0 0 460 340" fill="none">
           <ellipse
             cx="230"
             cy="170"
@@ -47,28 +47,28 @@ export const HeroVisual: React.FC = () => {
 
       {/* Floating Translucent Measurement Badges */}
       {/* mm Badge */}
-      <div className="absolute top-10 left-6 z-20 px-3.5 py-1.5 rounded-full bg-white/70 backdrop-blur-xl border border-white/90 shadow-glass text-xs font-bold text-[#4385E8] flex items-center gap-1 animate-float-slow">
-        <span className="w-2 h-2 rounded-full bg-[#4385E8]" />
+      <div className="absolute top-2 sm:top-10 left-2 sm:left-6 z-20 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-white/70 backdrop-blur-xl border border-white/90 shadow-glass text-[11px] sm:text-xs font-bold text-[#4385E8] flex items-center gap-1 animate-float-slow">
+        <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-[#4385E8]" />
         mm
       </div>
 
       {/* cm Badge */}
-      <div className="absolute top-4 right-16 z-20 w-11 h-11 rounded-full bg-white/70 backdrop-blur-xl border border-white/90 shadow-glass text-xs font-bold text-[#4385E8] flex items-center justify-center animate-float-slow [animation-delay:1.5s]">
+      <div className="absolute top-2 sm:top-4 right-4 sm:right-16 z-20 w-8 h-8 sm:w-11 sm:h-11 rounded-full bg-white/70 backdrop-blur-xl border border-white/90 shadow-glass text-[11px] sm:text-xs font-bold text-[#4385E8] flex items-center justify-center animate-float-slow [animation-delay:1.5s]">
         cm
       </div>
 
       {/* in Badge */}
-      <div className="absolute bottom-10 left-24 z-20 px-3 py-1 rounded-full bg-white/70 backdrop-blur-xl border border-white/90 shadow-glass text-xs font-bold text-[#8064E8] flex items-center gap-1 animate-float-slow [animation-delay:2.5s]">
+      <div className="absolute bottom-4 sm:bottom-10 left-6 sm:left-24 z-20 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/70 backdrop-blur-xl border border-white/90 shadow-glass text-[11px] sm:text-xs font-bold text-[#8064E8] flex items-center gap-1 animate-float-slow [animation-delay:2.5s]">
         in
       </div>
 
       {/* um Badge */}
-      <div className="absolute bottom-16 right-4 z-20 px-3 py-1 rounded-full bg-white/70 backdrop-blur-xl border border-white/90 shadow-glass text-xs font-bold text-[#8064E8] flex items-center gap-1 animate-float-slow [animation-delay:3.2s]">
+      <div className="absolute bottom-4 sm:bottom-16 right-2 sm:right-4 z-20 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/70 backdrop-blur-xl border border-white/90 shadow-glass text-[11px] sm:text-xs font-bold text-[#8064E8] flex items-center gap-1 animate-float-slow [animation-delay:3.2s]">
         µm
       </div>
 
       {/* Main 3D Composition SVG */}
-      <div className="relative z-10 w-full h-full max-w-[500px] flex items-center justify-center">
+      <div className="relative z-10 w-full h-full max-w-[480px] flex items-center justify-center p-2">
         <svg viewBox="0 0 520 380" className="w-full h-full filter drop-shadow-xl" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
             {/* Acrylic Ruler Gradient */}

@@ -8,7 +8,7 @@ export const CalibrationView: React.FC = () => {
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
       {/* Header Banner */}
-      <div className="p-8 rounded-3xl bg-gradient-to-r from-blue-50/80 via-white to-purple-50/80 border border-white shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-blue-50/80 via-white to-purple-50/80 border border-white shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-2 rounded-xl bg-blue-100 text-[#4385E8]">
@@ -31,7 +31,7 @@ export const CalibrationView: React.FC = () => {
       </div>
 
       {/* Calibration Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <div className="p-6 rounded-2xl bg-white/80 border border-[#DCE5F2] shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-semibold text-[#8E9CAE]">Status</span>

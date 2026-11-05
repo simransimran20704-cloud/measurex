@@ -122,7 +122,7 @@ export const DigitalProtractorView: React.FC = () => {
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-6 pb-12 select-none">
       {/* Header Banner */}
-      <div className="p-6 rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-1.5 rounded-xl bg-emerald-100 text-[#16A078] font-bold text-xs">LAB-06</span>
@@ -209,11 +209,11 @@ export const DigitalProtractorView: React.FC = () => {
       </div>
 
       {/* Main Interactive Protractor SVG Canvas */}
-      <div className="relative w-full overflow-x-auto p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl flex flex-col items-center justify-center min-h-[480px]">
+      <div className="relative w-full overflow-x-auto p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl flex flex-col items-center justify-center min-h-[360px] sm:min-h-[480px]">
         <div className="relative w-[780px] h-[440px]">
           <svg
             viewBox="0 0 780 440"
-            className="w-full h-full cursor-crosshair"
+            className="w-full h-full cursor-crosshair touch-none"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -366,8 +366,8 @@ export const DigitalProtractorView: React.FC = () => {
         </div>
 
         {/* Fine Adjustment Controls */}
-        <div className="mt-4 flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-slate-800 p-1 rounded-xl">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl">
             <button
               onClick={() => {
                 setAngleDeg((prev) => Math.max(0, Number((prev - 0.1).toFixed(1))));
@@ -389,6 +389,30 @@ export const DigitalProtractorView: React.FC = () => {
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
+          </div>
+
+          {/* Touch-Friendly Range Slider */}
+          <div className="flex-1 min-w-[200px] flex items-center gap-3 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
+            <span className="text-[11px] font-bold text-slate-300 whitespace-nowrap">Angle Slide:</span>
+            <input
+              type="range"
+              min="0"
+              max="360"
+              step="0.5"
+              value={angleDeg}
+              aria-label="Fine angle adjustment slider"
+              onChange={(e) => {
+                if (!isLocked) {
+                  setAngleDeg(parseFloat(e.target.value));
+                  soundEffects.playSliderTick();
+                }
+              }}
+              disabled={isLocked}
+              className="w-full accent-emerald-500 h-2 bg-slate-700 rounded-lg cursor-pointer disabled:opacity-50"
+            />
+            <span className="font-mono text-xs font-bold text-emerald-400 min-w-[45px] text-right">
+              {angleDeg.toFixed(1)}°
+            </span>
           </div>
 
           <button

@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useHistoryStore } from '../../stores/historyStore';
 import { useProjectStore } from '../../stores/projectStore';
 import { useCalibrationStore } from '../../stores/calibrationStore';
 import { useAppStore } from '../../stores/appStore';
 import { useAuthStore } from '../../stores/authStore';
+import { CsvImportModal } from '../import/CsvImportModal';
+import { sanitizeCsvFormula } from '../../engine/csv/csvParser';
 import { jsPDF } from 'jspdf';
 import {
   Download,
+  Upload,
   FileText,
   FileSpreadsheet,
   Code,
@@ -21,6 +24,7 @@ export const ExportCenterView: React.FC = () => {
   const { profile } = useCalibrationStore();
   const { showToast } = useAppStore();
   const { user, requireAuth } = useAuthStore();
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Export CSV
   const handleExportCSV = () => {
@@ -29,28 +33,48 @@ export const ExportCenterView: React.FC = () => {
         showToast('No measurement history to export', 'warning');
         return;
       }
-      const headers = ['ID', 'Tool', 'Title', 'Value', 'Unit', 'NumericValue', 'Date', 'Details'];
+      const headers = [
+        'measurement_id',
+        'project_name',
+        'measurement_name',
+        'category',
+        'value',
+        'unit',
+        'target_value',
+        'lower_tolerance',
+        'upper_tolerance',
+        'instrument',
+        'measured_by',
+        'measured_at',
+        'notes',
+      ];
+
       const rows = items.map((i) => [
-        i.id,
-        `"${i.tool}"`,
-        `"${i.title}"`,
-        `"${i.value}"`,
-        `"${i.unit}"`,
+        `"${sanitizeCsvFormula(i.id)}"`,
+        `"${sanitizeCsvFormula(i.projectName || '')}"`,
+        `"${sanitizeCsvFormula(i.title)}"`,
+        `"${sanitizeCsvFormula(i.category || 'Dimensional')}"`,
         i.rawNumericValue,
+        `"${sanitizeCsvFormula(i.unit)}"`,
+        i.targetValue ?? '',
+        i.lowerTolerance ?? '',
+        i.upperTolerance ?? '',
+        `"${sanitizeCsvFormula(i.tool)}"`,
+        `"${sanitizeCsvFormula(i.measuredBy || '')}"`,
         `"${new Date(i.timestamp).toISOString()}"`,
-        `"${i.details || ''}"`,
+        `"${sanitizeCsvFormula(i.notes || i.details || '')}"`,
       ]);
 
       const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `MeasureX_Report_${Date.now()}.csv`);
+      link.setAttribute('download', `MeasureX_Export_${Date.now()}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      showToast('Exported CSV measurement data!', 'success');
+      showToast('Exported CSV measurement data with metrology metadata!', 'success');
     });
   };
 
@@ -143,7 +167,7 @@ export const ExportCenterView: React.FC = () => {
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col gap-6 pb-12 select-none">
       {/* Header */}
-      <div className="p-8 rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-2 rounded-xl bg-blue-100 text-[#4385E8]">
@@ -157,8 +181,29 @@ export const ExportCenterView: React.FC = () => {
         </div>
       </div>
 
-      {/* Export Options Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Export & Import Options Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* CSV Import Option */}
+        <div className="p-6 rounded-3xl bg-gradient-to-br from-blue-50/70 to-indigo-50/40 border border-blue-200 shadow-sm flex flex-col justify-between h-[260px] group hover:border-[#4385E8] transition-all">
+          <div>
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#4385E8] to-[#8064E8] text-white flex items-center justify-center mb-4 shadow-md shadow-brand-blue/20">
+              <Upload className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-base text-[#1D2940] mb-1">Import CSV</h3>
+            <p className="text-xs text-[#66758D] leading-relaxed">
+              Upload external metrology CSV logs, batch inspection data, or sample templates into history.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white font-bold text-xs shadow-md shadow-brand-blue/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Import CSV Records</span>
+          </button>
+        </div>
+
         {/* PDF Option */}
         <div className="p-6 rounded-3xl bg-white border border-[#DCE5F2] shadow-sm flex flex-col justify-between h-[260px] group hover:border-[#4385E8]/40 transition-all">
           <div>
@@ -222,6 +267,12 @@ export const ExportCenterView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* CSV Import Modal */}
+      <CsvImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      />
     </div>
   );
 };

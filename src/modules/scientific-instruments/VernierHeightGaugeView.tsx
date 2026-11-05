@@ -119,7 +119,7 @@ export const VernierHeightGaugeView: React.FC = () => {
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-6 pb-12 select-none">
       {/* Header Banner */}
-      <div className="p-6 rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-1.5 rounded-xl bg-purple-100 text-[#8064E8] font-bold text-xs">LAB-03</span>
@@ -188,7 +188,7 @@ export const VernierHeightGaugeView: React.FC = () => {
       </div>
 
       {/* Interactive Height Gauge SVG Stage */}
-      <div className="relative w-full overflow-x-auto p-8 rounded-3xl bg-gradient-to-b from-white/95 to-[#F1F5FB] border border-white shadow-xl flex flex-col items-center justify-center min-h-[480px]">
+      <div className="relative w-full overflow-x-auto p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-white/95 to-[#F1F5FB] border border-white shadow-xl flex flex-col items-center justify-center min-h-[360px] sm:min-h-[480px]">
         <div className="relative w-[860px] h-[460px]">
           <svg viewBox="0 0 860 460" className="w-full h-full filter drop-shadow-md">
             <defs>
@@ -287,7 +287,7 @@ export const VernierHeightGaugeView: React.FC = () => {
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
-              className="cursor-ns-resize group"
+              className="cursor-ns-resize group touch-none"
             >
               {/* Slider Body Collar around Beam */}
               <rect x="435" y="-25" width="60" height="50" rx="3" fill="#E2E8F0" stroke="#475569" strokeWidth="1.5" />
@@ -329,6 +329,26 @@ export const VernierHeightGaugeView: React.FC = () => {
             <span className="text-[9px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 font-mono">OPTICAL ENCODER</span>
           </div>
         )}
+
+        <div className="w-full max-w-md flex items-center gap-3 px-4 py-2 mt-4 bg-white/90 rounded-2xl border border-slate-200 shadow-sm">
+          <span className="text-xs text-slate-500 font-semibold whitespace-nowrap">Height (0-300mm):</span>
+          <input
+            type="range"
+            min="0"
+            max="300"
+            step="0.02"
+            value={heightMm}
+            onChange={(e) => {
+              setHeightMm(Number(e.target.value));
+              soundEffects.playSliderTick();
+            }}
+            className="w-full accent-[#8064E8]"
+            aria-label="Fine height adjustment slider"
+          />
+          <span className="font-mono text-xs font-bold text-slate-700 w-16 text-right">
+            {heightMm.toFixed(2)}mm
+          </span>
+        </div>
 
         <p className="mt-4 text-xs text-[#8E9CAE] font-medium text-center">
           💡 Click and drag the scriber head vertically along the graduated beam to measure block height from the granite surface plate.

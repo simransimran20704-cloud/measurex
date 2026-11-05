@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { convertValue, UNITS, UNIT_CATEGORIES } from '../engine/conversion/units';
+import {
+  convertValue,
+  convertTemperature,
+  celsiusToFahrenheit,
+  fahrenheitToCelsius,
+  celsiusToKelvin,
+  kelvinToCelsius,
+  fahrenheitToKelvin,
+  kelvinToFahrenheit,
+  UNITS,
+  UNIT_CATEGORIES,
+} from '../engine/conversion/units';
 
 describe('Universal Unit Conversion Engine', () => {
   it('should support all 8 categories', () => {
@@ -48,14 +59,55 @@ describe('Universal Unit Conversion Engine', () => {
     it('accurately converts 0°C to 32°F and 273.15K', () => {
       expect(convertValue(0, 'c', 'f', 'temperature')).toBeCloseTo(32.0, 3);
       expect(convertValue(0, 'c', 'k', 'temperature')).toBeCloseTo(273.15, 3);
+      expect(convertValue(0, '°C', '°F', 'temperature')).toBeCloseTo(32.0, 3);
+      expect(convertValue(0, '°C', 'K', 'temperature')).toBeCloseTo(273.15, 3);
     });
 
     it('accurately converts 100°C to 212°F', () => {
       expect(convertValue(100, 'c', 'f', 'temperature')).toBeCloseTo(212.0, 3);
+      expect(convertValue(100, '°C', '°F', 'temperature')).toBeCloseTo(212.0, 3);
+      expect(celsiusToFahrenheit(100)).toBe(212);
+      expect(fahrenheitToCelsius(212)).toBe(100);
     });
 
     it('accurately handles negative temperatures (-40°C = -40°F)', () => {
       expect(convertValue(-40, 'c', 'f', 'temperature')).toBeCloseTo(-40.0, 3);
+      expect(celsiusToFahrenheit(-40)).toBe(-40);
+      expect(fahrenheitToCelsius(-40)).toBe(-40);
+    });
+
+    it('implements all 6 temperature conversions accurately', () => {
+      // 1. Celsius to Fahrenheit
+      expect(celsiusToFahrenheit(25)).toBe(77);
+      expect(convertTemperature(25, '°C', '°F')).toBe(77);
+
+      // 2. Fahrenheit to Celsius
+      expect(fahrenheitToCelsius(77)).toBe(25);
+      expect(convertTemperature(77, '°F', '°C')).toBe(25);
+
+      // 3. Celsius to Kelvin
+      expect(celsiusToKelvin(25)).toBe(298.15);
+      expect(convertTemperature(25, '°C', 'K')).toBe(298.15);
+
+      // 4. Kelvin to Celsius
+      expect(kelvinToCelsius(298.15)).toBe(25);
+      expect(convertTemperature(298.15, 'K', '°C')).toBe(25);
+
+      // 5. Fahrenheit to Kelvin
+      expect(fahrenheitToKelvin(77)).toBe(298.15);
+      expect(convertTemperature(77, '°F', 'K')).toBe(298.15);
+
+      // 6. Kelvin to Fahrenheit
+      expect(kelvinToFahrenheit(298.15)).toBe(77);
+      expect(convertTemperature(298.15, 'K', '°F')).toBe(77);
+    });
+
+    it('ensures temperature does not use ordinary multiplicative ratio logic', () => {
+      // Ordinary ratio logic: 0 * factor = 0 (which is wrong for temperature)
+      // Proper affine logic: 0 °C is 32 °F, not 0 °F
+      expect(celsiusToFahrenheit(0)).toBe(32);
+      expect(convertTemperature(0, '°C', '°F')).toBe(32);
+      expect(convertTemperature(0, '°C', 'K')).toBe(273.15);
     });
   });
 

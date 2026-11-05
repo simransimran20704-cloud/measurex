@@ -5,7 +5,7 @@ export const HelpGuideView: React.FC = () => {
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col gap-6 pb-12 select-none">
       {/* Header */}
-      <div className="p-8 rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-2 rounded-xl bg-purple-100 text-[#8064E8]">
@@ -20,7 +20,7 @@ export const HelpGuideView: React.FC = () => {
       </div>
 
       {/* Guide Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Vernier Caliper Guide */}
         <div className="p-6 rounded-3xl bg-white border border-[#DCE5F2] shadow-sm flex flex-col gap-3">
           <div className="flex items-center gap-2 text-[#4385E8] font-bold text-sm">

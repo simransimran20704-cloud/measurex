@@ -37,9 +37,9 @@ export const MeasurementHistorySection: React.FC = () => {
   };
 
   return (
-    <MagneticCard className="p-5 h-full flex flex-col justify-between">
+    <MagneticCard className="p-3.5 sm:p-5 h-full flex flex-col justify-between">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center text-[#8064E8]">
             <Clock className="w-4 h-4" />

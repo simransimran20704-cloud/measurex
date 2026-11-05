@@ -35,29 +35,30 @@ export const CalibrationModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-xl rounded-3xl bg-white border border-white/90 shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
+      <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl bg-white border border-white/90 shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/60 to-purple-50/60">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#4385E8] flex items-center justify-center">
+        <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/60 to-purple-50/60 sticky top-0 bg-white/95 backdrop-blur-md z-10">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-100 text-[#4385E8] flex items-center justify-center flex-shrink-0">
               <Target className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-[#1D2940]">Display Screen Calibration</h3>
-              <p className="text-[11px] text-[#8E9CAE]">Calibrate physical pixels to actual millimeters</p>
+              <h3 className="font-bold text-xs sm:text-sm text-[#1D2940]">Display Screen Calibration</h3>
+              <p className="text-[10px] sm:text-[11px] text-[#8E9CAE]">Calibrate physical pixels to actual millimeters</p>
             </div>
           </div>
           <button
             onClick={closeModal}
-            className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors shadow-sm"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors shadow-sm flex-shrink-0"
+            aria-label="Close modal"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 flex flex-col gap-5">
+        <div className="p-4 sm:p-6 flex flex-col gap-4 sm:gap-5">
           {/* Method Selector Tabs */}
           <div className="grid grid-cols-3 gap-2 p-1 rounded-2xl bg-slate-100/80">
             <button

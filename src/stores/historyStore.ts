@@ -1,3 +1,4 @@
+import { useAuthStore } from './authStore';
 import { create } from 'zustand';
 import { MeasurementHistoryItem } from '../types';
 
@@ -6,6 +7,10 @@ interface HistoryState {
   addItem: (item: Omit<MeasurementHistoryItem, 'id' | 'timestamp'>) => void;
   removeItem: (id: string) => void;
   clearHistory: () => void;
+  importItems: (
+    items: MeasurementHistoryItem[],
+    mode: 'skip' | 'replace'
+  ) => { added: number; replaced: number; skipped: number };
 }
 
 const INITIAL_HISTORY: MeasurementHistoryItem[] = [
@@ -72,11 +77,13 @@ export const useHistoryStore = create<HistoryState>((set) => ({
     return INITIAL_HISTORY;
   })(),
   addItem: (item) => {
+    const currentUserId = useAuthStore.getState().user?.id;
     set((state) => {
       const newItem: MeasurementHistoryItem = {
         ...item,
         id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
         timestamp: Date.now(),
+        userId: item.userId || currentUserId || undefined,
       };
       const updated = [newItem, ...state.items];
       try {
@@ -93,6 +100,48 @@ export const useHistoryStore = create<HistoryState>((set) => ({
       } catch (e) {}
       return { items: updated };
     });
+  },
+  importItems: (items, mode) => {
+    const currentUserId = useAuthStore.getState().user?.id;
+    let added = 0;
+    let replaced = 0;
+    let skipped = 0;
+
+    set((state) => {
+      const existingMap = new Map(state.items.map((i) => [i.id, i]));
+      const newItems = [...state.items];
+
+      for (const item of items) {
+        const itemWithUser: MeasurementHistoryItem = {
+          ...item,
+          userId: item.userId || currentUserId || undefined,
+        };
+
+        if (existingMap.has(item.id)) {
+          if (mode === 'replace') {
+            const idx = newItems.findIndex((i) => i.id === item.id);
+            if (idx !== -1) {
+              newItems[idx] = itemWithUser;
+              replaced++;
+            }
+          } else {
+            skipped++;
+          }
+        } else {
+          newItems.unshift(itemWithUser);
+          existingMap.set(item.id, itemWithUser);
+          added++;
+        }
+      }
+
+      try {
+        localStorage.setItem('measurex_history', JSON.stringify(newItems.slice(0, 1000)));
+      } catch (e) {}
+
+      return { items: newItems };
+    });
+
+    return { added, replaced, skipped };
   },
   clearHistory: () => {
     try {

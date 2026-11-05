@@ -98,7 +98,7 @@ export const MetrologyQuizView: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 select-none pb-12">
       {/* Header */}
-      <div className="p-6 md:p-8 rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-2 rounded-xl bg-purple-50 text-[#8064E8] border border-purple-200">
@@ -119,7 +119,7 @@ export const MetrologyQuizView: React.FC = () => {
       </div>
 
       {!quizCompleted ? (
-        <div className="p-6 md:p-8 rounded-3xl bg-white border border-[#DCE5F2] shadow-sm flex flex-col gap-6">
+        <div className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-white border border-[#DCE5F2] shadow-sm flex flex-col gap-5 sm:gap-6">
           {/* Question Index Progress */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -301,7 +301,7 @@ export const MetrologyQuizView: React.FC = () => {
               </span>
               <h3 className="text-lg font-black text-[#1D2940]">Certificate of Metrology Competency</h3>
               <p className="text-xs text-slate-600">
-                Awarded to <span className="font-bold text-[#1D2940]">{user?.name || 'Simran Sharma'}</span> for successfully passing the Dimensional Calibration & Metrology Reading Evaluation.
+                Awarded to <span className="font-bold text-[#1D2940]">{user?.name || 'Guest Metrologist'}</span> for successfully passing the Dimensional Calibration & Metrology Reading Evaluation.
               </p>
               <span className="text-[10px] font-mono text-slate-400 mt-2">
                 Verification ID: MX-CERT-{(Date.now() % 1000000).toString(16).toUpperCase()}

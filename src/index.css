@@ -10,7 +10,10 @@
     --brand-secondary: #EEF3FF;
   }
 
-  body {
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
     background-color: #F8FAFF;
     color: #1D2940;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";

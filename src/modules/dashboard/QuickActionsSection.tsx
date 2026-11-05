@@ -62,9 +62,9 @@ export const QuickActionsSection: React.FC = () => {
   ];
 
   return (
-    <MagneticCard className="p-5 h-full flex flex-col justify-between">
+    <MagneticCard className="p-3.5 sm:p-5 h-full flex flex-col justify-between">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-3 sm:mb-4">
         <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center text-[#4385E8]">
           <Zap className="w-4 h-4" />
         </div>
@@ -72,17 +72,17 @@ export const QuickActionsSection: React.FC = () => {
       </div>
 
       {/* Grid of 6 Buttons */}
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
         {actions.map((act) => {
           const Icon = act.icon;
           return (
             <button
               key={act.id}
               onClick={act.onClick}
-              className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all group active:scale-95 shadow-sm ${act.color}`}
+              className={`flex flex-col items-center justify-center p-2 sm:p-2.5 rounded-xl border text-center transition-all group active:scale-95 shadow-sm ${act.color}`}
             >
-              <Icon className="w-5 h-5 mb-1.5 transition-transform group-hover:scale-110" />
-              <span className="text-[11px] font-semibold text-[#1D2940] leading-tight">
+              <Icon className="w-4 h-4 sm:w-5 sm:h-5 mb-1 sm:mb-1.5 transition-transform group-hover:scale-110 flex-shrink-0" />
+              <span className="text-[10px] sm:text-[11px] font-semibold text-[#1D2940] leading-tight line-clamp-1">
                 {act.label}
               </span>
             </button>

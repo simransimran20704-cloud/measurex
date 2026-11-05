@@ -279,9 +279,9 @@ export const PrecisionStudioView: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-130px)] flex flex-col gap-3 max-w-[1600px] mx-auto select-none">
+    <div className="w-full h-auto lg:h-[calc(100vh-130px)] flex flex-col gap-3 max-w-[1600px] mx-auto select-none pb-8 lg:pb-0">
       {/* Top Toolbar */}
-      <div className="flex flex-wrap items-center justify-between px-4 py-2.5 rounded-2xl bg-white/90 border border-[#DCE5F2] shadow-sm backdrop-blur-xl gap-3">
+      <div className="flex flex-wrap items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white/90 border border-[#DCE5F2] shadow-sm backdrop-blur-xl gap-2 sm:gap-3">
         {/* Tool selector */}
         <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl">
           <button
@@ -396,11 +396,11 @@ export const PrecisionStudioView: React.FC = () => {
       </div>
 
       {/* Main Studio Workspace: Synchronized 3-Sided Rulers + Canvas + Results Panel */}
-      <div className="flex-1 flex gap-4 min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
         {/* Studio Canvas Area with 3-Sided Rulers */}
         <div
           ref={containerRef}
-          className="flex-1 relative rounded-3xl bg-white border border-[#DCE5F2] shadow-glass overflow-hidden flex flex-col"
+          className="flex-1 relative rounded-2xl sm:rounded-3xl bg-white border border-[#DCE5F2] shadow-glass overflow-hidden flex flex-col min-h-[340px] sm:min-h-[440px] lg:min-h-0"
         >
           {/* Top Canvas Row: Left Ruler + Central Canvas + Right Ruler */}
           <div className="flex-1 flex relative overflow-hidden">
@@ -419,7 +419,7 @@ export const PrecisionStudioView: React.FC = () => {
                 onPointerMove={handleCanvasPointerMove}
                 onPointerUp={handleCanvasPointerUp}
                 onWheel={handleWheel}
-                className={`w-full h-full ${grid.show ? 'bg-grid-pattern' : 'bg-[#FAFCFF]'}`}
+                className={`w-full h-full touch-none ${grid.show ? 'bg-grid-pattern' : 'bg-[#FAFCFF]'}`}
                 style={{
                   backgroundSize: `${grid.size * zoom}px ${grid.size * zoom}px`,
                   backgroundPosition: `${pan.x}px ${pan.y}px`,
@@ -561,8 +561,8 @@ export const PrecisionStudioView: React.FC = () => {
         </div>
 
         {/* Results Panel (Right Side) */}
-        <div className="w-80 flex flex-col gap-4">
-          <div className="p-5 rounded-3xl bg-white border border-[#DCE5F2] shadow-sm flex flex-col gap-4">
+        <div className="w-full lg:w-80 flex flex-col gap-4 flex-shrink-0">
+          <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border border-[#DCE5F2] shadow-sm flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4 text-[#4385E8]" />

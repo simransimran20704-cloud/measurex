@@ -104,7 +104,7 @@ export const UnitConverterView: React.FC = () => {
       </div>
 
       {/* Main Conversion Interactive Card */}
-      <div className="p-8 rounded-3xl bg-white border border-[#DCE5F2] shadow-glass grid grid-cols-1 md:grid-cols-11 gap-6 items-center">
+      <div className="p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-white border border-[#DCE5F2] shadow-glass grid grid-cols-1 md:grid-cols-11 gap-4 sm:gap-6 items-center">
         {/* From Input (5 Cols) */}
         <div className="md:col-span-5 flex flex-col gap-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">From Value & Unit</label>
@@ -170,7 +170,7 @@ export const UnitConverterView: React.FC = () => {
       </div>
 
       {/* Controls & Log Row */}
-      <div className="flex items-center justify-between px-6 py-4 rounded-2xl bg-white border border-[#DCE5F2] shadow-sm">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl bg-white border border-[#DCE5F2] shadow-sm">
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 font-medium">Decimal Precision:</span>
           <select
@@ -196,7 +196,7 @@ export const UnitConverterView: React.FC = () => {
       </div>
 
       {/* Instant All-Units Matrix Table */}
-      <div className="p-6 rounded-3xl bg-white border border-[#DCE5F2] shadow-sm flex flex-col gap-4">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#DCE5F2] shadow-sm flex flex-col gap-4">
         <h3 className="font-bold text-sm text-[#1D2940]">
           Simultaneous Conversion Matrix ({availableUnits.length} Units in {category})
         </h3>

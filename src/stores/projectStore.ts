@@ -1,3 +1,4 @@
+import { useAuthStore } from './authStore';
 import { create } from 'zustand';
 import { ProjectItem } from '../types';
 import { apiClient } from '../services/apiClient';

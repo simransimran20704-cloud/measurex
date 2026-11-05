@@ -6,14 +6,13 @@ import { MagneticCard } from '../../components/common/MagneticCard';
 import {
   FolderKanban,
   Plus,
-  Trash2,
   Copy,
+  Trash2,
   ExternalLink,
-  Edit2,
   Layers,
   Compass,
   Cpu,
-  Lock,
+  User,
 } from 'lucide-react';
 
 export const ProjectsView: React.FC = () => {
@@ -24,6 +23,41 @@ export const ProjectsView: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newType, setNewType] = useState<'Precision Studio' | 'Instruments' | 'Workspace' | 'Quick Measure'>('Precision Studio');
+
+  // 1. Guest User Prompt (Requirement 2 & 4)
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 pb-12 select-none animate-in fade-in">
+        <div className="p-6 sm:p-12 rounded-2xl sm:rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass backdrop-blur-xl text-center flex flex-col items-center">
+          <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#4385E8] flex items-center justify-center mb-4 border border-blue-200/50 shadow-sm">
+            <FolderKanban className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-[#1D2940] mb-2">Cloud Measurement Projects</h1>
+          <p className="text-xs sm:text-sm text-[#66758D] max-w-md mb-6 leading-relaxed">
+            Project workspaces, CAD blueprint drawings, and multi-instrument test runs are stored securely in your private cloud account. Sign in or create a free account to create, manage, and access your projects.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => openAuthModal('login', 'access and manage your private measurement projects')}
+              className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white font-bold text-xs shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
+            >
+              <User className="w-4 h-4" />
+              <span>Sign In / Register Free</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('precision-studio')}
+              className="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition-colors"
+            >
+              Launch Precision Studio Free →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Authenticated User Experience (Requirement 3: Isolate records per user)
+  const userProjects = projects.filter((proj) => !proj.userId || proj.userId === user.id);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +82,9 @@ export const ProjectsView: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col gap-6 pb-12 select-none">
+    <div className="w-full max-w-6xl mx-auto flex flex-col gap-6 pb-12 select-none animate-in fade-in">
       {/* Header */}
-      <div className="p-8 rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
+      <div className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white/90 border border-[#DCE5F2] shadow-glass flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-2 rounded-xl bg-blue-100 text-[#4385E8]">
@@ -76,7 +110,7 @@ export const ProjectsView: React.FC = () => {
       {isCreating && (
         <form
           onSubmit={handleCreate}
-          className="p-6 rounded-3xl bg-white border border-[#4385E8]/40 shadow-xl flex flex-col sm:flex-row items-center gap-4 animate-in fade-in"
+          className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#4385E8]/40 shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 animate-in fade-in"
         >
           <input
             type="text"
@@ -117,8 +151,8 @@ export const ProjectsView: React.FC = () => {
       )}
 
       {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((proj) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {userProjects.map((proj) => (
           <MagneticCard key={proj.id} className="p-6 flex flex-col justify-between h-[210px]">
             <div>
               <div className="flex items-center justify-between mb-3">

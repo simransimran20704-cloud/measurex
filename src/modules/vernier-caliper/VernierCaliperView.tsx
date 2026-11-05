@@ -211,7 +211,7 @@ export const VernierCaliperView: React.FC = () => {
       </div>
 
       {/* Main Interactive Caliper Stage */}
-      <div className="relative w-full overflow-x-auto p-8 rounded-3xl bg-gradient-to-b from-white/95 to-[#F1F5FB] border border-white shadow-xl flex flex-col items-center justify-center min-h-[380px]">
+      <div className="relative w-full overflow-x-auto p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-white/95 to-[#F1F5FB] border border-white shadow-xl flex flex-col items-center justify-center min-h-[340px] sm:min-h-[380px]">
         {/* Caliper SVG Rendering */}
         <div className="relative w-[880px] h-[260px]">
           <svg viewBox="0 0 880 260" className="w-full h-full filter drop-shadow-md">
@@ -374,7 +374,7 @@ export const VernierCaliperView: React.FC = () => {
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
-              className="cursor-ew-resize group"
+              className="cursor-ew-resize group touch-none"
               filter="url(#jawDrop)"
             >
               {/* Slider Main Body */}
@@ -458,6 +458,27 @@ export const VernierCaliperView: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Fine Adjustment Touch Slider for mobile/precision */}
+        <div className="w-full max-w-md flex items-center gap-3 px-4 py-2 mt-4 bg-white/90 rounded-2xl border border-slate-200 shadow-sm">
+          <span className="text-xs text-slate-500 font-semibold whitespace-nowrap">Jaw Position:</span>
+          <input
+            type="range"
+            min="0"
+            max="150"
+            step="0.02"
+            value={jawPositionMm}
+            onChange={(e) => {
+              setJawPositionMm(Number(e.target.value));
+              soundEffects.playSliderTick();
+            }}
+            className="w-full accent-[#4385E8]"
+            aria-label="Fine jaw position slider"
+          />
+          <span className="font-mono text-xs font-bold text-slate-700 w-16 text-right">
+            {jawPositionMm.toFixed(2)}mm
+          </span>
+        </div>
 
         <p className="mt-4 text-xs text-[#8E9CAE] font-medium text-center">
           💡 Click and drag the silver movable jaw to simulate real measurement. Vernier coincidence line glows <span className="font-bold text-emerald-600">green</span>.

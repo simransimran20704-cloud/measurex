@@ -143,7 +143,7 @@ export const DigitalCompassView: React.FC = () => {
       </div>
 
       {/* Direct Numeric Input Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-[#DCE5F2] shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-[#DCE5F2] shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-[#1D2940] flex items-center gap-1.5">
             <Compass className="w-4 h-4 text-[#4385E8]" />
@@ -209,7 +209,7 @@ export const DigitalCompassView: React.FC = () => {
       </div>
 
       {/* Main Drafting Parchment Canvas */}
-      <div className="relative w-full overflow-x-auto p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl flex flex-col items-center justify-center min-h-[500px]">
+      <div className="relative w-full overflow-x-auto p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl flex flex-col items-center justify-center min-h-[360px] sm:min-h-[500px]">
         <div className="relative w-[780px] h-[440px]">
           <svg viewBox="0 0 780 440" className="w-full h-full">
             <defs>

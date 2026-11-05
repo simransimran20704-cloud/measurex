@@ -10,8 +10,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   Sparkles,
-  Crown,
-  Eye,
+    Eye,
   EyeOff,
   AlertCircle,
   AlertTriangle,
@@ -108,10 +107,10 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-md rounded-3xl bg-white border border-white/90 shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
+      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl bg-white border border-white/90 shadow-2xl flex flex-col">
         {/* Header with Logo */}
-        <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/60 via-white to-purple-50/60">
+        <div className="px-5 sm:px-6 pt-5 sm:pt-6 pb-3.5 sm:pb-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/60 via-white to-purple-50/60 sticky top-0 bg-white/95 backdrop-blur-md z-10">
           <Logo size="sm" showTagline={false} />
           <button
             onClick={closeAuthModal}
@@ -356,7 +355,7 @@ export const AuthModal: React.FC = () => {
               className="w-full mt-2 py-3 rounded-2xl bg-gradient-to-r from-[#4385E8] to-[#8064E8] text-white font-bold text-xs shadow-md shadow-brand-blue/25 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
             >
               <ShieldCheck className="w-4 h-4" />
-              <span>{mode === 'login' ? 'Authenticate with Password' : 'Register Pro Engineering Account'}</span>
+              <span>{mode === 'login' ? 'Authenticate with Password' : 'Create Free Account'}</span>
             </button>
           )}
         </form>
@@ -377,10 +376,10 @@ export const AuthModal: React.FC = () => {
               className="px-3 py-2 rounded-xl bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200 text-[#4385E8] text-[11px] font-bold flex flex-col items-start transition-all text-left"
             >
               <div className="flex items-center gap-1.5 w-full">
-                <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                <User className="w-3.5 h-3.5 text-[#4385E8]" />
                 <span className="truncate">Simran Sharma</span>
               </div>
-              <span className="text-[9px] font-mono text-slate-500 font-normal">MeasureX@2026 (Pro)</span>
+              <span className="text-[9px] font-mono text-slate-500 font-normal">MeasureX@2026 (Lead Metrologist)</span>
             </button>
 
             <button
@@ -392,7 +391,7 @@ export const AuthModal: React.FC = () => {
                 <Sparkles className="w-3.5 h-3.5 text-[#8064E8]" />
                 <span className="truncate">Dr. Vikram</span>
               </div>
-              <span className="text-[9px] font-mono text-slate-500 font-normal">LabDirector@2026 (Ent)</span>
+              <span className="text-[9px] font-mono text-slate-500 font-normal">LabDirector@2026 (Lab Director)</span>
             </button>
           </div>
         </div>

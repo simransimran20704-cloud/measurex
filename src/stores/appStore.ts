@@ -36,6 +36,9 @@ interface AppState {
   setSearchQuery: (query: string) => void;
   isDemoModalOpen: boolean;
   setIsDemoModalOpen: (open: boolean) => void;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
+  toggleMobileMenu: () => void;
   toast: { message: string; type: 'success' | 'info' | 'warning' } | null;
   showToast: (message: string, type?: 'success' | 'info' | 'warning') => void;
   hideToast: () => void;
@@ -43,11 +46,14 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   activeTab: 'home',
-  setActiveTab: (tab) => set({ activeTab: tab }),
+  setActiveTab: (tab) => set({ activeTab: tab, isMobileMenuOpen: false }),
   searchQuery: '',
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   isDemoModalOpen: false,
   setIsDemoModalOpen: (isDemoModalOpen) => set({ isDemoModalOpen }),
+  isMobileMenuOpen: false,
+  setIsMobileMenuOpen: (isMobileMenuOpen) => set({ isMobileMenuOpen }),
+  toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
   toast: null,
   showToast: (message, type = 'info') => {
     set({ toast: { message, type } });

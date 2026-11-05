@@ -9,35 +9,46 @@ import {
   FolderKanban,
   Clock,
   Settings,
-  Crown,
-  LogOut,
+    LogOut,
   User,
   ShieldCheck,
+  Menu,
+  X,
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const { activeTab, setActiveTab, searchQuery, setSearchQuery, showToast } = useAppStore();
-  const { user, isAuthenticated, openAuthModal, openSubscriptionModal, logout } = useAuthStore();
+  const { activeTab, setActiveTab, searchQuery, setSearchQuery, showToast, isMobileMenuOpen, toggleMobileMenu } = useAppStore();
+  const { user, isAuthenticated, openAuthModal, logout } = useAuthStore();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-20 w-full px-8 py-3.5 flex items-center justify-between bg-[#F8FAFF]/80 backdrop-blur-xl border-b border-[#E2E8F0]/60">
-      {/* Left: Search Bar */}
-      <div className="relative w-72 sm:w-80">
-        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#8E9CAE]">
-          <Search className="w-4 h-4" />
+    <header className="sticky top-0 z-20 w-full px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4 bg-[#F8FAFF]/80 backdrop-blur-xl border-b border-[#E2E8F0]/60">
+      {/* Left: Hamburger Button (mobile/tablet) & Search Bar */}
+      <div className="flex items-center gap-2 flex-1 min-w-0 max-w-sm">
+        <button
+          onClick={toggleMobileMenu}
+          className="lg:hidden p-2 rounded-xl text-[#1D2940] hover:bg-[#EEF3FF] transition-colors focus:outline-none focus:ring-2 focus:ring-[#4385E8]/30 flex-shrink-0"
+          aria-label={isMobileMenuOpen ? 'Close navigation drawer' : 'Open navigation drawer'}
+        >
+          {isMobileMenuOpen ? <X className="w-5 h-5 text-[#4385E8]" /> : <Menu className="w-5 h-5 text-[#1D2940]" />}
+        </button>
+
+        <div className="relative flex-1 min-w-0">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#8E9CAE]">
+            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tools..."
+            className="w-full pl-8 sm:pl-10 pr-3 py-1.5 sm:py-2 rounded-full text-xs font-medium bg-white/80 border border-[#E2E8F0] placeholder-[#8E9CAE] text-[#1D2940] shadow-sm hover:border-brand-blue/40 focus:outline-none focus:ring-2 focus:ring-[#4385E8]/20 focus:border-[#4385E8] transition-all"
+          />
         </div>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search tools, units..."
-          className="w-full pl-10 pr-4 py-2 rounded-full text-xs font-medium bg-white/80 border border-[#E2E8F0] placeholder-[#8E9CAE] text-[#1D2940] shadow-sm hover:border-brand-blue/40 focus:outline-none focus:ring-2 focus:ring-[#4385E8]/20 focus:border-[#4385E8] transition-all"
-        />
       </div>
 
-      {/* Center: Quick Action Nav Pills */}
-      <div className="hidden md:flex items-center gap-2">
+      {/* Center: Quick Action Nav Pills (hidden on mobile and tablet) */}
+      <div className="hidden xl:flex items-center gap-2">
         <button
           onClick={() => setActiveTab('quick-measure')}
           className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border ${
@@ -76,28 +87,30 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Right: Projects, History, Settings, Avatar */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
         <button
           onClick={() => setActiveTab('projects')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 border border-[#E2E8F0] text-[#1D2940] hover:bg-white hover:border-[#4385E8]/30 shadow-sm transition-all"
+          title="Projects"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 border border-[#E2E8F0] text-[#1D2940] hover:bg-white hover:border-[#4385E8]/30 shadow-sm transition-all"
         >
           <FolderKanban className="w-3.5 h-3.5 text-[#4385E8]" />
-          <span>Projects</span>
+          <span className="hidden sm:inline">Projects</span>
         </button>
 
         <button
           onClick={() => setActiveTab('history')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 border border-[#E2E8F0] text-[#1D2940] hover:bg-white hover:border-[#8064E8]/30 shadow-sm transition-all"
+          title="Measurement History"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 border border-[#E2E8F0] text-[#1D2940] hover:bg-white hover:border-[#8064E8]/30 shadow-sm transition-all"
         >
           <Clock className="w-3.5 h-3.5 text-[#8064E8]" />
-          <span>History</span>
+          <span className="hidden sm:inline">History</span>
         </button>
 
         {/* Settings Button */}
         <button
-          onClick={openSubscriptionModal}
-          title="Subscription & Metrology Settings"
-          className="w-8 h-8 rounded-full bg-white/80 border border-[#E2E8F0] flex items-center justify-center text-[#66758D] hover:text-[#1D2940] hover:bg-white transition-all shadow-sm"
+          onClick={() => setActiveTab('calibration')}
+          title="Screen Calibration Settings"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/80 border border-[#E2E8F0] flex items-center justify-center text-[#66758D] hover:text-[#1D2940] hover:bg-white transition-all shadow-sm flex-shrink-0"
         >
           <Settings className="w-4 h-4" />
         </button>
@@ -138,23 +151,13 @@ export const Header: React.FC = () => {
                   <div className="flex flex-col min-w-0">
                     <span className="font-bold text-xs text-[#1D2940] truncate">{user.name}</span>
                     <span className="text-[10px] text-slate-500 truncate">{user.email}</span>
-                    <span className="mt-1 inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 uppercase tracking-wider w-fit">
-                      <Crown className="w-2.5 h-2.5 fill-amber-500 text-amber-600" />
-                      {user.plan} Plan
+                    <span className="mt-1 inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#4385E8] uppercase tracking-wider w-fit border border-blue-200/50">
+                      {user.role || 'Verified Metrologist'}
                     </span>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setUserDropdownOpen(false);
-                    openSubscriptionModal();
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[#1D2940] hover:bg-slate-50 rounded-xl transition-colors"
-                >
-                  <Crown className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Manage Subscription</span>
-                </button>
+                
 
                 <button
                   onClick={() => {

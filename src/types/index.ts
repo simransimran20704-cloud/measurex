@@ -90,6 +90,14 @@ export interface MeasurementHistoryItem {
   unit: string;
   timestamp: number;
   details?: string;
+  userId?: string;
+  category?: string;
+  projectName?: string;
+  targetValue?: number;
+  lowerTolerance?: number;
+  upperTolerance?: number;
+  measuredBy?: string;
+  notes?: string;
 }
 
 export interface ProjectItem {
@@ -100,4 +108,5 @@ export interface ProjectItem {
   description?: string;
   pointsCount?: number;
   data?: any;
+  userId?: string;
 }
